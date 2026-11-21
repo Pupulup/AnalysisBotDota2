@@ -195,8 +195,8 @@ function timelineOption(match: MatchData, key: "radiant_gold_adv" | "radiant_xp_
 }
 
 function eventLabel(event: Record<string, any>) {
-  const type = String(event.type || "event").replaceAll("_", " ");
-  const key = event.key ? String(event.key).replaceAll("_", " ") : "";
+  const type = String(event.type || "event").replace(/_/g, " ");
+  const key = event.key ? String(event.key).replace(/_/g, " ") : "";
   return key ? `${type}: ${key}` : type;
 }
 
@@ -216,6 +216,15 @@ export function TimelineSection({ match }: { match: MatchData }) {
       </Panel>}
     </> : <Panel title="Timeline unavailable" subtitle="OPEN DOTA HAS NOT PROVIDED ADVANTAGE SERIES">
       <div className="analytics-empty">This match does not contain parsed gold or experience timeline data. The match overview and player statistics are still available.</div>
+    </Panel>}
+    {(match.teamfights || []).length > 0 && <Panel title="Teamfight summary" subtitle={`${(match.teamfights || []).length} DETECTED TEAMFIGHTS`}>
+      <div className="analytics-events">
+        {(match.teamfights || []).map((fight, index) => <div className="analytics-event" key={index}>
+          <span className="analytics-event-time">{duration(Math.max(0, Number(fight.start) || 0))}</span>
+          <span className="analytics-event-marker"><Swords size={14} /></span>
+          <div><strong>Teamfight {index + 1}</strong><small>{Number(fight.deaths || 0)} DEATHS · {duration(Math.max(0, (Number(fight.end) || 0) - (Number(fight.start) || 0)))} DURATION</small></div>
+        </div>)}
+      </div>
     </Panel>}
     <Panel title="Match objectives" subtitle={`${events.length} RECORDED EVENTS`}>
       {events.length ? <div className="analytics-events">
@@ -340,6 +349,15 @@ export function AnalysisSection({ match }: { match: MatchData }) {
         <div><Users size={20} /><span>Match data</span><strong>{match.players.length} players</strong><small>{match.is_parsed ? "Parsed player statistics" : "Partial match data"}</small></div>
       </div>
       <p className="analytics-method-note">Performance score is a heuristic indicator calculated from KDA, GPM, hero damage, tower damage, teamfight participation (when supplied) and healing. It is not an official Dota 2 rating and should not be interpreted as a causal measure of a player's impact.</p>
+    </Panel>
+    <Panel title="Individual player contribution" subtitle="COMBAT · ECONOMY · OBJECTIVES · SUPPORT">
+      <div className="analytics-contribution-table">
+        <div className="analytics-contribution-head"><span>PLAYER / HERO</span><span>K+A</span><span>HERO DMG</span><span>TOWER DMG</span><span>HEALING</span><span>NET WORTH</span><span>SCORE</span></div>
+        {ranked.map(p => <div className="analytics-contribution-row" key={p.player_slot}>
+          <div className="analytics-contribution-player">{p.hero_image ? <img src={p.hero_image} alt={p.hero_name || "Hero"} /> : <div className="analytics-hero-fallback">?</div>}<div><strong>{playerName(p)}</strong><small>{p.hero_name || "Unknown hero"}</small></div></div>
+          <span>{p.kills + p.assists}</span><span>{number(p.hero_damage)}</span><span>{number(p.tower_damage)}</span><span>{number(p.hero_healing)}</span><span>{number(p.net_worth)}</span><strong>{playerScore(p, match.players).toFixed(0)}</strong>
+        </div>)}
+      </div>
     </Panel>
     <Panel title="Player performance ranking" subtitle="RELATIVE SCORE WITHIN THIS MATCH">
       <div className="analytics-ranking">
