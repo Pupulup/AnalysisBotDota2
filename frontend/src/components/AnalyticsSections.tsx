@@ -1,4 +1,6 @@
 import ReactECharts from "echarts-for-react";
+import type { ReactNode, ElementType } from "react";
+import { Printer } from "lucide-react";
 import {
   Activity,
   Award,
@@ -79,7 +81,7 @@ const kda = (p: MatchPlayer) => (p.kills + p.assists) / Math.max(p.deaths, 1);
 const radiant = (p: MatchPlayer) => p.player_slot < 128;
 
 function Metric({ label, value, icon: Icon, tone = "" }: {
-  label: string; value: string; icon: React.ElementType; tone?: string;
+  label: string; value: string; icon: ElementType; tone?: string;
 }) {
   return <div className="analytics-metric">
     <div className={`analytics-metric-icon ${tone}`}><Icon size={18} /></div>
@@ -88,7 +90,7 @@ function Metric({ label, value, icon: Icon, tone = "" }: {
 }
 
 function Panel({ title, subtitle, children }: {
-  title: string; subtitle?: string; children: React.ReactNode;
+  title: string; subtitle?: string; children: ReactNode;
 }) {
   return <section className="analytics-panel">
     <div className="analytics-panel-heading">
