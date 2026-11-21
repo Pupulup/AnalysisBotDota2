@@ -1,3 +1,4 @@
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,6 +36,26 @@ class MatchPlayer(BaseModel):
     total_gold: int | None = None
     total_xp: int | None = None
 
+    # Дополнительная статистика OpenDota
+    teamfight_participation: float | None = None
+    stuns: float | None = None
+    obs_placed: int | None = None
+    sen_placed: int | None = None
+    tower_kills: int | None = None
+    roshan_kills: int | None = None
+    buyback_count: int | None = None
+
+    # Временные ряды для индивидуальной динамики игрока
+    times: list[int] | None = None
+    gold_t: list[int] | None = None
+    xp_t: list[int] | None = None
+    lh_t: list[int] | None = None
+
+    # Логи событий игрока
+    purchase_log: list[dict[str, Any]] | None = None
+    kills_log: list[dict[str, Any]] | None = None
+    ability_upgrades: list[dict[str, Any]] | None = None
+
 
 class MatchResponse(BaseModel):
     match_id: int
@@ -51,7 +72,12 @@ class MatchResponse(BaseModel):
     human_players: int | None = None
 
     is_parsed: bool
+    players: list[MatchPlayer] = Field(default_factory=list)
 
-    players: list[MatchPlayer] = Field(
-        default_factory=list
-    )
+    # Командное преимущество по золоту и опыту (по минутам)
+    radiant_gold_adv: list[int] | None = None
+    radiant_xp_adv: list[int] | None = None
+
+    # События матча и командные сражения
+    objectives: list[dict[str, Any]] | None = None
+    teamfights: list[dict[str, Any]] | None = None
