@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import ReactECharts from "echarts-for-react";
+import "./PlayerProfile.css";
 
 type Lang = "en" | "ru";
 type Mode = "ranked" | "turbo" | "unranked" | "other";
@@ -209,4 +210,3 @@ export default function PlayerProfile({ language }: { language: Lang }) {
   </div>;
 }
 
-import "./PlayerProfile.css";
