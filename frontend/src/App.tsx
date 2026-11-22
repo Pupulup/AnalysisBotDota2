@@ -218,8 +218,8 @@ function App() {
             </button>
           </div>}
 
-          {error && <div className="error-panel"><Shield size={19} /><span>{error}</span></div>}
-          {loading && <div className="loading-panel"><RefreshCw size={24} className="spin" /><span>Loading match data...</span></div>}
+          {error && activeTab !== "Player" && <div className="error-panel"><Shield size={19} /><span>{error}</span></div>}
+          {loading && activeTab !== "Player" && <div className="loading-panel"><RefreshCw size={24} className="spin" /><span>Loading match data...</span></div>}
 
           {!match && !loading && !error && activeTab !== "Guides" && activeTab !== "Player" && (
             <div className="empty-state">
