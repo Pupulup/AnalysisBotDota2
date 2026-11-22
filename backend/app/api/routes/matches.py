@@ -8,6 +8,22 @@ router = APIRouter(prefix="/api/matches", tags=["Matches"])
 opendota = OpenDotaClient()
 
 
+@router.post("/{match_id}/parse")
+async def request_match_parse(
+    match_id: int = Path(..., gt=0, description="Dota 2 Match ID")
+):
+    try:
+        result = await opendota.request_parse(match_id)
+        job = result.get("job") or {}
+        return {
+            "status": result.get("status", "queued"),
+            "job_id": job.get("jobId"),
+            "message": "Запрос на обработку реплея отправлен в OpenDota."
+        }
+    except OpenDotaError as error:
+        raise HTTPException(status_code=error.status_code, detail=error.message)
+
+
 @router.get("/{match_id}", response_model=MatchResponse)
 async def get_match(
     match_id: int = Path(..., gt=0, description="Dota 2 Match ID")
@@ -60,7 +76,17 @@ async def get_match(
             game_mode=data.get("game_mode"),
             lobby_type=data.get("lobby_type"),
             human_players=data.get("human_players"),
-            is_parsed=len(players) > 0,
+            is_parsed=(
+                data.get("version") is not None
+                or bool(data.get("teamfights"))
+                or bool(data.get("objectives"))
+                or bool(data.get("radiant_gold_adv"))
+                or bool(data.get("radiant_xp_adv"))
+                or any(
+                    player.get("purchase_log") or player.get("kills_log")
+                    for player in raw_players
+                )
+            ),
             players=players,
             radiant_gold_adv=data.get("radiant_gold_adv"),
             radiant_xp_adv=data.get("radiant_xp_adv"),
