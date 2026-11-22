@@ -15,7 +15,7 @@ type PlayerAnalytics = {
   profile: { personaname: string; avatarfull?: string | null; rank_tier?: number | null; leaderboard_rank?: number | null };
   patch: { id: number; name: string; date: string };
   mode_category: Mode;
-  sample: { count: number; level: "low" | "moderate" | "large"; requested: number };
+  sample: { count: number; level: "low" | "moderate" | "large" };
   summary: Summary;
   recent_period: Summary;
   previous_period: Summary | null;
