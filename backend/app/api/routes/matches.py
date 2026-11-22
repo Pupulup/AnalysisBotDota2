@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Path
 from app.services.opendota import OpenDotaClient, OpenDotaError
 from app.services.stratz import StratzClient, StratzError
 from app.schemas.match import MatchResponse
+from app.services.game_modes import describe_game_mode
 
 
 router = APIRouter(prefix="/api/matches", tags=["Matches"])
@@ -179,6 +180,7 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
         players.append(player)
 
     players.sort(key=lambda player: player["player_slot"])
+    mode_info = describe_game_mode(data.get("gameMode"), data.get("lobbyType"))
     return MatchResponse(
         match_id=int(data.get("id") or match_id),
         radiant_win=data.get("didRadiantWin"),
@@ -188,6 +190,7 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
         start_time=start_time,
         game_mode=data.get("gameMode"),
         lobby_type=data.get("lobbyType"),
+        **mode_info,
         human_players=len(raw_players),
         is_parsed=(
             has_playback
@@ -311,6 +314,7 @@ async def get_match(
         players.sort(key=lambda player: player.get("player_slot", 0))
         age_days = replay_age_days(data.get("start_time"))
 
+        mode_info = describe_game_mode(data.get("game_mode"), data.get("lobby_type"))
         return MatchResponse(
             match_id=data.get("match_id", match_id),
             radiant_win=data.get("radiant_win"),
@@ -320,6 +324,7 @@ async def get_match(
             start_time=data.get("start_time"),
             game_mode=data.get("game_mode"),
             lobby_type=data.get("lobby_type"),
+            **mode_info,
             human_players=data.get("human_players"),
             is_parsed=(
                 data.get("version") is not None
