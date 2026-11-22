@@ -53,7 +53,7 @@ export interface MatchPlayer {
   ability_upgrades?: Array<{ time?: number; ability?: string; level?: number }> | null;
   lane_role?: number | null;
   is_roaming?: boolean | null;
-  damage_taken?: number | null;
+  damage_taken?: unknown;
   item_uses?: Record<string, number> | null;
   ability_uses?: Record<string, number> | null;
   item_0?: number | null;
@@ -394,7 +394,8 @@ function playerInsight(player: MatchPlayer, allPlayers: MatchPlayer[]) {
 
 function reportTime(value?: number | null) {
   if (value == null || !Number.isFinite(Number(value))) return "—";
-  return duration(Math.max(0, Number(value)));
+  const seconds = Math.trunc(Number(value));
+  return `${seconds < 0 ? "−" : ""}${duration(Math.abs(seconds))}`;
 }
 
 function reportDate(value?: number | null) {
