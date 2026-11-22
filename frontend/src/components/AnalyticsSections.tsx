@@ -604,6 +604,11 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
 
         <PlayerProgression player={p} />
 
+        <div className="pdf-player-insight">
+          <div><h4>Strengths</h4><ul>{playerInsight(p, match.players).positives.map((item, i) => <li key={i}>{item}</li>)}</ul></div>
+          <div><h4>Review points</h4><ul>{playerInsight(p, match.players).concerns.map((item, i) => <li key={i}>{item}</li>)}</ul></div>
+        </div>
+
         <div className="pdf-player-logs">
           <div><h4>Item purchase log</h4>
             {p.purchase_log?.length ? <table className="pdf-report-table compact"><thead><tr><th>Time</th><th>Item</th></tr></thead><tbody>
