@@ -52,7 +52,7 @@ def describe_http_error(response: httpx.Response, token: str) -> str:
     body = response.text[:800].replace(token, "[REDACTED]")
     if body:
         metadata.append(f"Response preview: {body}")
-    return "\\n".join(metadata)
+    return "\n".join(metadata)
 
 
 async def graphql(
@@ -65,21 +65,21 @@ async def graphql(
     if response.status_code == 401:
         details = describe_http_error(response, token)
         raise SystemExit(
-            "STRATZ returned HTTP 401. The token may be invalid, expired or unauthorized.\\n"
+            "STRATZ returned HTTP 401. The token may be invalid, expired or unauthorized.\n"
             f"{details}"
         )
     if response.status_code == 403:
         details = describe_http_error(response, token)
         raise SystemExit(
             "STRATZ returned HTTP 403. This does not always mean the token is invalid; "
-            "the request may be blocked by an access policy or network protection.\\n"
+            "the request may be blocked by an access policy or network protection.\n"
             f"{details}"
         )
     if response.status_code == 429:
         raise SystemExit("STRATZ rate limit reached (HTTP 429).")
     if response.status_code >= 400:
         details = describe_http_error(response, token)
-        raise SystemExit(f"STRATZ returned an HTTP error.\\n{details}")
+        raise SystemExit(f"STRATZ returned an HTTP error.\n{details}")
     response.raise_for_status()
     payload = response.json()
     if payload.get("errors"):
