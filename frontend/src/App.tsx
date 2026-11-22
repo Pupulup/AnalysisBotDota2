@@ -14,6 +14,7 @@ import {
   TeamsSection
 } from "./components/AnalyticsSections";
 import AdvancedAnalytics from "./components/AdvancedAnalytics";
+import DecisionAnalysis from "./components/DecisionAnalysis";
 import { I18nProvider, Localize } from "./i18n";
 import type { Language } from "./i18n";
 import "./App.css";
@@ -26,6 +27,7 @@ const navigation = [
   { name: "Timeline", icon: ChartNoAxesCombined },
   { name: "Teams", icon: Swords },
   { name: "Analysis", icon: Trophy },
+  { name: "Decisions", icon: BrainCircuit },
   { name: "Fights", icon: Flame },
   { name: "Items", icon: Package },
   { name: "Economy", icon: Coins },
@@ -114,7 +116,7 @@ function App() {
     Players: "Player Statistics",
     Timeline: "Match Timeline",
     Teams: "Team Comparison",
-    Analysis: "Match Analysis",
+    Analysis: "Match Analysis",\n    Decisions: "Decision Analysis",
     Fights: "Teamfight Analysis",
     Items: "Item Builds",
     Economy: "Economy Analysis",
