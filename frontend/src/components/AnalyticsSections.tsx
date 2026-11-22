@@ -575,7 +575,6 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
           <ReportMetric label="Tower damage" value={number(p.tower_damage)} />
           <ReportMetric label="Healing" value={number(p.hero_healing)} />
           <ReportMetric label="Teamfight participation" value={p.teamfight_participation == null ? "—" : `${(p.teamfight_participation * 100).toFixed(1)}%`} />
-          <ReportMetric label="Stuns" value={p.stuns == null ? "—" : Number(p.stuns).toFixed(1)} />
           <ReportMetric label="Wards O / S" value={`${optionalNumber(p.obs_placed)} / ${optionalNumber(p.sen_placed)}`} />
           <ReportMetric label="Tower / Roshan kills" value={`${optionalNumber(p.tower_kills)} / ${optionalNumber(p.roshan_kills)}`} />
           <ReportMetric label="Buybacks" value={optionalNumber(p.buyback_count)} />
