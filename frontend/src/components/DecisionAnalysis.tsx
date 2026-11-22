@@ -82,11 +82,6 @@ function DecisionAnalysis({ match, language }: Props) {
     kind: String(event.type || "objective")
   })).sort((a, b) => a.time - b.time);
 
-  const criticalFights = [...fightRows]
-    .filter(fight => fight.radiantDeaths + fight.direDeaths > 0)
-    .sort((a, b) => (b.radiantDeaths + b.direDeaths) - (a.radiantDeaths + a.direDeaths))
-    .slice(0, 5);
-
   const playerRows = players.map(player => {
     const fightStats = fights.flatMap((fight: Record<string, any>) =>
       (Array.isArray(fight.players) ? fight.players : [])
