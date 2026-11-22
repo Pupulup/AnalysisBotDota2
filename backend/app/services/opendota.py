@@ -20,14 +20,17 @@ class OpenDotaClient:
         self._items_cache = None
         self._items_cache_time = 0
 
-    async def _request(self, endpoint: str):
+    async def _request(self, endpoint: str, method: str = "GET"):
         url = f"{self.BASE_URL}/{endpoint}"
 
         try:
             async with httpx.AsyncClient(
                     timeout=self.timeout
             ) as client:
-                response = await client.get(url)
+                if method == "POST":
+                    response = await client.post(url)
+                else:
+                    response = await client.get(url)
 
             if response.status_code == 404:
                 raise OpenDotaError("Данные не найдены.", 404)
@@ -69,6 +72,14 @@ class OpenDotaClient:
                 "Не удалось подключиться к OpenDota.",
                 502
             )
+
+    async def request_parse(self, match_id: int) -> dict:
+        data = await self._request(f"request/{match_id}", method="POST")
+        if not isinstance(data, dict):
+            raise OpenDotaError("Некорректный ответ при запросе обработки реплея.")
+        if data.get("status") == "failed" or data.get("err"):
+            raise OpenDotaError(data.get("err") or "OpenDota не смогла поставить матч в очередь обработки.", 502)
+        return data
 
     async def get_match(self, match_id: int) -> dict:
         data = await self._request(f"matches/{match_id}")
