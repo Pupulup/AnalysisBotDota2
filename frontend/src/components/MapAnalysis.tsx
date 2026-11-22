@@ -79,7 +79,7 @@ export default function MapAnalysis({ match, language }: { match: MatchData; lan
         axisLine: { lineStyle: { color: "#3b4a60" } }, splitArea: { show: true, areaStyle: { color: ["#121c2a", "#152132"] } },
       },
       visualMap: {
-        min: 0, max: maxCount, calculable: false, orient: "horizontal", left: "center", bottom: 2,
+        min: 0, max: maxCount, calculable: false, orient: "horizontal", left: "center", bottom: 2, seriesIndex: 0,
         text: [copy(language, "High activity", "Высокая активность"), copy(language, "Low", "Низкая")],
         textStyle: { color: "#91a2b8" }, inRange: { color: ["#1b2a40", "#2d6196", "#e4a75b"] },
       },
