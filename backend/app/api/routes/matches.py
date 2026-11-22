@@ -92,14 +92,16 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict) -> MatchRespo
         purchases = playback.get("purchaseEvents") or []
         if purchases:
             has_playback = True
-            player["purchase_log"] = [
-                {
+            purchase_log = []
+            for event in purchases:
+                item_id = event.get("itemId")
+                item = items.get(int(item_id)) if item_id is not None else None
+                purchase_log.append({
                     "time": event.get("time"),
-                    "key": str(event.get("itemId")),
-                    "item_id": event.get("itemId"),
-                }
-                for event in purchases
-            ]
+                    "key": item.get("key") if item else f"item_{item_id}",
+                    "item_id": item_id,
+                })
+            player["purchase_log"] = purchase_log
         else:
             player["purchase_log"] = []
 
