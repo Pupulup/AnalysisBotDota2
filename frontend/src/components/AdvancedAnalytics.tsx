@@ -14,7 +14,7 @@ const mmss = (n: number) => { const value=Math.trunc(Number(n)||0); const abs=Ma
 const radiant = (p: MatchPlayer) => p.player_slot < 128;
 const heroName = (p: MatchPlayer) => p.hero_name || (p.hero_id ? `Hero ${p.hero_id}` : "Unknown hero");
 const cleanKey = (key: string) => key.replace(/^item_/, "").replace(/_/g, " ");
-const itemImage = (key?: string | null) => key ? `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/items/${cleanKey(key)}_lg.png` : null;
+const itemImage = (key?: string | null) => key ? `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/items/${key.replace(/^item_/, "")}_lg.png` : null;
 
 function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return <section className="analytics-panel"><div className="analytics-panel-heading"><div><h2>{title}</h2>{subtitle && <span>{subtitle}</span>}</div></div>{children}</section>;
