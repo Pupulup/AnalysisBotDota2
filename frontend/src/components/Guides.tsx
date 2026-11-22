@@ -9,7 +9,9 @@ type GuideData = {
   build: Record<string, ItemStat[]>;
   abilities: Array<{ abilityId: number; matchCount: number; winCount: number }>;
   talents: Array<{ abilityId: number; matchCount: number; winCount: number }>;
-  enemy_matchups: Array<{ hero_id: number; games: number; wins: number; win_rate: number | null }>;
+  enemy_matchups: Array<{ hero_id: number; games: number; wins: number; win_rate: number | null; edge?: number | null }>;
+  ally_synergies: Array<{ hero_id: number; games: number; wins: number; win_rate: number | null; edge?: number | null }>;
+  matchup_data_available: boolean;
   data_source: string;
 };
 type Lang = "en" | "ru";
@@ -60,6 +62,7 @@ export default function Guides({ language }: { language: Lang }) {
   }, []);
 
   const enemyKey = enemies.filter(Boolean).join(",");
+  const allyKey = allies.filter(Boolean).join(",");
   useEffect(() => {
     if (!heroId) return;
     const controller = new AbortController();
@@ -67,6 +70,7 @@ export default function Guides({ language }: { language: Lang }) {
     setError("");
     const params = new URLSearchParams();
     enemies.filter(Boolean).forEach(id => params.append("enemy_hero_ids", String(id)));
+    allies.filter(Boolean).forEach(id => params.append("ally_hero_ids", String(id)));
     fetch(`/api/guides/${heroId}?${params.toString()}`, { signal: controller.signal })
       .then(async response => {
         const data = await response.json();
@@ -79,7 +83,7 @@ export default function Guides({ language }: { language: Lang }) {
       })
       .finally(() => { if (!controller.signal.aborted) setLoadingGuide(false); });
     return () => controller.abort();
-  }, [heroId, enemyKey]);
+  }, [heroId, enemyKey, allyKey]);
 
   const heroById = useMemo(() => new Map(heroes.map(hero => [hero.id, hero])), [heroes]);
   const phases = [
@@ -105,7 +109,7 @@ export default function Guides({ language }: { language: Lang }) {
         <PickSelectors title={copy(language,"Allied picks","Пики союзников")} values={allies} heroes={heroes} onChange={setAllies} language={language}/>
         <PickSelectors title={copy(language,"Enemy picks","Пики противников")} values={enemies} heroes={heroes} onChange={setEnemies} language={language}/>
       </div>
-      <p className="guide-note">{copy(language,"Enemy matchups are calculated from OpenDota's hero matchup aggregates. Item win rates are hero-specific STRATZ aggregates, not a measured item-versus-enemy interaction. Allied picks are collected for the next draft-analysis iteration.","Матчапы против противников рассчитываются по агрегированной статистике OpenDota. Винрейты предметов — агрегаты STRATZ для выбранного героя, а не измеренная эффективность предмета против конкретного пика. Пики союзников пока сохраняются как контекст для следующего этапа анализа драфта.")}</p>
+      <p className="guide-note">{copy(language,"STRATZ supplies ally synergy and enemy matchup edges where available; OpenDota is the fallback for enemy win rates. Item win rates are hero-specific aggregates, not a measured item-versus-enemy interaction.","STRATZ предоставляет синергию с союзниками и матчапы против противников, если данные доступны; OpenDota используется как резерв для винрейта против врагов. Винрейты предметов — агрегаты для героя, а не измеренная эффективность предмета против конкретного пика.")}</p>
     </section>
 
     {error && <div className="advanced-error">{error}</div>}
@@ -136,10 +140,18 @@ export default function Guides({ language }: { language: Lang }) {
       </section>
 
       <section className="analytics-panel">
+        <div className="analytics-panel-heading"><div><h2>{copy(language,"Allied hero synergy","Синергия с союзниками")}</h2><span>{copy(language,"STRATZ TEAMMATE WIN-RATE EDGE","ПРЕИМУЩЕСТВО ВИНРЕЙТА С СОЮЗНИКАМИ ПО STRATZ")}</span></div></div>
+        {guide.ally_synergies?.length ? <div className="guide-matchup-list">{guide.ally_synergies.map(row=>{
+          const ally=heroById.get(row.hero_id);
+          return <div className="guide-matchup-row" key={row.hero_id}><span>{ally?.name || `Hero #${row.hero_id}`}</span><b>{row.edge == null ? "—" : `${row.edge > 0 ? "+" : ""}${row.edge.toFixed(2)}`}</b><small>{row.games.toLocaleString()} {copy(language,"matches","матчей")}</small></div>;
+        })}</div> : <p className="guide-empty">{copy(language,"Choose allied heroes to see STRATZ synergy data. If unavailable, the provider may not have enough matchup samples.","Выберите героев союзников, чтобы увидеть синергию STRATZ. Если данных нет, у провайдера может быть недостаточно матчей для этой пары.")}</p>}
+      </section>
+
+      <section className="analytics-panel">
         <div className="analytics-panel-heading"><div><h2>{copy(language,"Selected enemy matchups","Матчапы против выбранных противников")}</h2><span>{copy(language,"HERO WIN RATE AGAINST EACH SELECTED ENEMY","ВИНРЕЙТ ГЕРОЯ ПРОТИВ КАЖДОГО ВЫБРАННОГО ПРОТИВНИКА")}</span></div></div>
         {guide.enemy_matchups?.length ? <div className="guide-matchup-list">{guide.enemy_matchups.map(row=>{
           const enemy=heroById.get(row.hero_id);
-          return <div className="guide-matchup-row" key={row.hero_id}><span>{enemy?.name || `Hero #${row.hero_id}`}</span><b>{row.win_rate == null ? "—" : `${row.win_rate.toFixed(1)}%`}</b><small>{row.games.toLocaleString()} {copy(language,"matches","матчей")}</small></div>;
+          return <div className="guide-matchup-row" key={row.hero_id}><span>{enemy?.name || `Hero #${row.hero_id}`}</span><b>{row.win_rate == null ? "—" : `${row.win_rate.toFixed(1)}%`}</b><small>{row.edge == null ? "" : `Edge ${row.edge > 0 ? "+" : ""}${row.edge.toFixed(2)} · `}{row.games.toLocaleString()} {copy(language,"matches","матчей")}</small></div>;
         })}</div> : <p className="guide-empty">{copy(language,"Choose enemy heroes to see matchup statistics.","Выберите героев противника, чтобы увидеть статистику матчапов.")}</p>}
       </section>
     </>}
