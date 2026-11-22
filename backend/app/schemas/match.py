@@ -68,6 +68,9 @@ class MatchResponse(BaseModel):
     start_time: int | None = None
     game_mode: int | None = None
     lobby_type: int | None = None
+    game_mode_name: str | None = None
+    lobby_type_name: str | None = None
+    mode_category: str = "unknown"
     human_players: int | None = None
     is_parsed: bool
     data_source: str = "opendota"
