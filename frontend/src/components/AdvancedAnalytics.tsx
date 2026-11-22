@@ -10,7 +10,7 @@ type Props = { match: MatchData; language: Lang };
 
 const copy = (lang: Lang, en: string, ru: string) => lang === "ru" ? ru : en;
 const fmt = (n: number) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Number.isFinite(n) ? n : 0);
-const mmss = (n: number) => `${Math.floor(Math.max(0, n) / 60)}:${String(Math.max(0, n) % 60).padStart(2, "0")}`;
+const mmss = (n: number) => { const value=Math.trunc(Number(n)||0); const abs=Math.abs(value); return `${value<0?"−":""}${Math.floor(abs/60)}:${String(abs%60).padStart(2,"0")}`; };
 const radiant = (p: MatchPlayer) => p.player_slot < 128;
 const heroName = (p: MatchPlayer) => p.hero_name || (p.hero_id ? `Hero ${p.hero_id}` : "Unknown hero");
 const cleanKey = (key: string) => key.replace(/^item_/, "").replace(/_/g, " ");
@@ -36,7 +36,7 @@ function TeamfightSection({ match, language }: Props) {
             <div className="advanced-fight-head"><strong>{copy(language,"Fight","Сражение")} #{index+1}</strong><span>{mmss(Number(fight.start)||0)} – {mmss(Number(fight.end)||0)}</span><b>{Number(fight.deaths||0)} {copy(language,"deaths","смертей")}</b></div>
             <div className="advanced-fight-grid">
               {contributions.map(({stats,player,impact})=><div className="advanced-fight-player" key={player!.player_slot}>
-                <div className="advanced-player-label">{player!.hero_image?<img src={player!.hero_image} alt={heroName(player!)}/>:null}<div><strong>{playerName(player!)}</strong><small>{heroName(player!)} · {radiant(player!)?"Radiant":"Dire"}</small></div></div>
+                <div className="advanced-player-label">{player!.hero_image?<img src={player!.hero_image} alt={heroName(player!)}/>:null}<div><strong>{playerName(player!)}</strong><small>{heroName(player!)} · {radiant(player!)?copy(language,"Radiant","Свет"):copy(language,"Dire","Тьма")}</small></div></div>
                 <div className="advanced-impact-track"><span style={{width:`${impact/max*100}%`,background:radiant(player!)?"#55b991":"#c66f7b"}}/></div>
                 <div className="advanced-fight-stats"><span>{copy(language,"Damage","Урон")} <b>{fmt(Number(stats.damage||0))}</b></span><span>{copy(language,"Healing","Лечение")} <b>{fmt(Number(stats.healing||0))}</b></span><span>{copy(language,"Gold Δ","Δ золота")} <b>{fmt(Number(stats.gold_delta||0))}</b></span><span>{copy(language,"Deaths","Смерти")} <b>{Number(stats.deaths||0)}</b></span></div>
               </div>)}
@@ -129,7 +129,7 @@ function TrendsSection({ match, language }: Props) {
     finally{setLoading(false);}
   }
   const valid=rows.filter(x=>x.player);
-  const option={tooltip:{trigger:"axis"},legend:{textStyle:{color:"#9aa9bd"}},grid:{left:55,right:20,top:35,bottom:35},xAxis:{type:"category",data:valid.map(x=>String(x.id)),axisLabel:{color:"#8290a5"}},yAxis:{type:"value",axisLabel:{color:"#8290a5"},splitLine:{lineStyle:{color:"#29374c"}}},series:[{name:"GPM",type:"line",smooth:true,data:valid.map(x=>x.player!.gold_per_min)},{name:"KDA",type:"line",smooth:true,data:valid.map(x=>(x.player!.kills+x.player!.assists)/Math.max(x.player!.deaths,1))}]};
+  const option={tooltip:{trigger:"axis"},legend:{textStyle:{color:"#9aa9bd"}},grid:{left:55,right:55,top:35,bottom:35},xAxis:{type:"category",data:valid.map(x=>String(x.id)),axisLabel:{color:"#8290a5"}},yAxis:[{type:"value",name:"GPM",axisLabel:{color:"#8290a5"},splitLine:{lineStyle:{color:"#29374c"}}},{type:"value",name:"KDA",position:"right",axisLabel:{color:"#8290a5"},splitLine:{show:false}}],series:[{name:"GPM",type:"line",smooth:true,yAxisIndex:0,data:valid.map(x=>x.player!.gold_per_min)},{name:"KDA",type:"line",smooth:true,yAxisIndex:1,data:valid.map(x=>(x.player!.kills+x.player!.assists)/Math.max(x.player!.deaths,1))}]};
   return <div className="analytics-page">
     <Panel title={copy(language,"Player match history","История матчей игрока")} subtitle={copy(language,"COMPARE UP TO TEN MATCHES","СРАВНЕНИЕ ДО ДЕСЯТИ МАТЧЕЙ")}>
       <div className="advanced-history-controls"><label>{copy(language,"Player from current match","Игрок из текущего матча")}<select value={selected} onChange={e=>{setSelected(e.target.value);setRows([]);}}>{match.players.map(p=><option key={p.player_slot} value={String(p.account_id??p.player_slot)}>{playerName(p)} · {heroName(p)}</option>)}</select></label>
