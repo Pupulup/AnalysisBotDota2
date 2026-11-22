@@ -1,4 +1,5 @@
-import React, { ReactNode, cloneElement, createContext, isValidElement, useContext } from "react";
+import React, { cloneElement, createContext, isValidElement, useContext } from "react";
+import type { ReactNode } from "react";
 
 export type Language = "en" | "ru";
 
@@ -17,6 +18,7 @@ const dictionary: Record<string, string> = {
   "Ready to analyze":"Готово к анализу","Enter a Dota 2 Match ID to load match statistics.":"Введите ID матча Dota 2, чтобы загрузить статистику.",
   "API SYSTEM ONLINE":"API СИСТЕМА РАБОТАЕТ","PARSED":"ДАННЫЕ ОБРАБОТАНЫ","NOT PARSED":"НЕ ОБРАБОТАНО",
   "RADIANT":"СВЕТ","Radiant":"Свет","DIRE":"ТЬМА","Dire":"Тьма","VICTORY":"ПОБЕДА","Victory":"Победа","DEFEAT":"ПОРАЖЕНИЕ","Defeat":"Поражение","UNKNOWN":"НЕИЗВЕСТНО","Unknown":"Неизвестно",
+  "Radiant victory":"Победа Света","Dire victory":"Победа Тьмы","Radiant":"Свет","Dire":"Тьма",
   "WINNER":"ПОБЕДИТЕЛЬ","PLAYERS":"ИГРОКИ","OBJECTIVES":"ЦЕЛИ","GAME MODE ID":"ID РЕЖИМА ИГРЫ",
   "MATCH DURATION":"ДЛИТЕЛЬНОСТЬ МАТЧА","TOTAL KILLS":"ВСЕГО УБИЙСТВ","TOTAL NET WORTH":"ОБЩАЯ СТОИМОСТЬ","HERO DAMAGE":"УРОН ПО ГЕРОЯМ",
   "Match result":"Результат матча","Match MVP":"MVP матча","ESTIMATED PERFORMANCE LEADER":"ЛИДЕР ПО ОЦЕНОЧНОЙ ЭФФЕКТИВНОСТИ",
