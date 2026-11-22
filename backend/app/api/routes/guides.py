@@ -11,7 +11,7 @@ opendota = OpenDotaClient()
 stratz = StratzClient()
 
 
-def normalize_stratz_items(rows: list[dict] | None, items: dict) -> list[dict]:
+def normalize_stratz_items(rows: list[dict] | None, items: dict, prior_win_rate: float = 50.0) -> list[dict]:
     result = []
     for row in rows or []:
         item_id = row.get("itemId")
@@ -27,7 +27,7 @@ def normalize_stratz_items(rows: list[dict] | None, items: dict) -> list[dict]:
             "matches": matches,
             "wins": wins,
             "win_rate": (wins / matches * 100) if matches else None,
-            "adjusted_win_rate": ((wins + 50) / (matches + 100) * 100) if matches else None,
+            "adjusted_win_rate": ((wins + prior_win_rate) / (matches + 1) * 100) if matches else None,
         })
     return sorted(result, key=lambda entry: (entry["adjusted_win_rate"] or 0, entry["matches"]), reverse=True)
 
@@ -130,11 +130,16 @@ async def get_hero_guide(
             try:
                 stratz_data = await stratz.get_hero_guide(hero_id)
                 stats = stratz_data.get("heroStats") or {}
+                baseline_rows = stats.get("heroBase") or []
+                baseline_matches = sum(int(row.get("matchCount") or 0) for row in baseline_rows)
+                baseline_wins = sum(int(row.get("winCount") or 0) for row in baseline_rows)
+                prior_win_rate = (baseline_wins / baseline_matches * 100) if baseline_matches else 50.0
+                prior_wins = prior_win_rate * 100
                 build = {
-                    "starting": normalize_stratz_items(stats.get("startingItems"), items),
-                    "early": normalize_stratz_items(stats.get("earlyItems"), items),
-                    "mid": normalize_stratz_items(stats.get("midItems"), items),
-                    "late": normalize_stratz_items(stats.get("lateItems"), items),
+                    "starting": normalize_stratz_items(stats.get("startingItems"), items, prior_wins),
+                    "early": normalize_stratz_items(stats.get("earlyItems"), items, prior_wins),
+                    "mid": normalize_stratz_items(stats.get("midItems"), items, prior_wins),
+                    "late": normalize_stratz_items(stats.get("lateItems"), items, prior_wins),
                 }
                 first_points = normalize_ability_rows(stats.get("firstPoints"), ability_ids, ability_constants)
                 max_levels = normalize_ability_rows(stats.get("maxLevels"), ability_ids, ability_constants)
@@ -164,7 +169,7 @@ async def get_hero_guide(
                             "hero_id": ally_id,
                             "games": games,
                             "wins": wins,
-                            "win_rate": row.get("winRateHeroId1") if row.get("winRateHeroId1") is not None else ((wins / games * 100) if games else None),
+                            "win_rate": (wins / games * 100) if games else None,
                             "edge": row.get("synergy"),
                         })
 
