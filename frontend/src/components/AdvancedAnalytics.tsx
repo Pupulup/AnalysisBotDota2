@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import ReactECharts from "echarts-for-react";
-import { MatchData, MatchPlayer, playerName } from "./AnalyticsSections";
+import type { MatchData, MatchPlayer } from "./AnalyticsSections";
+import { playerName } from "./AnalyticsSections";
 import "./AdvancedAnalytics.css";
 
 type Lang = "en" | "ru";
@@ -20,7 +21,7 @@ function Panel({ title, subtitle, children }: { title: string; subtitle?: string
 
 function TeamfightSection({ match, language }: Props) {
   const fights = match.teamfights || [];
-  const playersBySlot = new Map(match.players.map(p => [p.player_slot, p]));
+  const playersBySlot = new Map<number, MatchPlayer>(match.players.map(p => [p.player_slot, p] as const));
   return <div className="analytics-page">
     <Panel title={copy(language,"Teamfight breakdown","Разбор командных сражений")} subtitle={copy(language,"PLAYER CONTRIBUTION · DAMAGE · HEALING · GOLD","ВКЛАД ИГРОКОВ · УРОН · ЛЕЧЕНИЕ · ЗОЛОТО")}>
       {!fights.length ? <div className="analytics-empty">{copy(language,"OpenDota has not supplied parsed teamfight data for this match.","OpenDota не предоставила обработанные данные о командных сражениях.")}</div> :
@@ -51,14 +52,14 @@ function TeamfightSection({ match, language }: Props) {
 function ItemsSection({ match, language }: Props) {
   const [selected, setSelected] = useState("all");
   const players = selected === "all" ? match.players : match.players.filter(p=>String(p.player_slot)===selected);
-  const inventory = (p: MatchPlayer) => [p.item_0,p.item_1,p.item_2,p.item_3,p.item_4,p.item_5,p.item_neutral].filter((x):x is number=>typeof x==="number"&&x>0);
+  const inventory = (p: MatchPlayer) => p.item_inventory?.length ? p.item_inventory.map(item=>item.name) : [p.item_0,p.item_1,p.item_2,p.item_3,p.item_4,p.item_5,p.item_neutral].filter((x):x is number=>typeof x==="number"&&x>0).map(id=>`#${id}`);
   const logs = players.flatMap(p=>(p.purchase_log||[]).map(entry=>({p,entry}))).sort((a,b)=>(a.entry.time||0)-(b.entry.time||0));
   return <div className="analytics-page">
     <Panel title={copy(language,"Item builds and purchase timing","Сборки и время покупки предметов")} subtitle={copy(language,"PURCHASE LOGS FROM OPENDOTA","ЖУРНАЛ ПОКУПОК OPENDOTA")}>
       <div className="advanced-toolbar"><label>{copy(language,"Player","Игрок")}</label><select value={selected} onChange={e=>setSelected(e.target.value)}><option value="all">{copy(language,"All players","Все игроки")}</option>{match.players.map(p=><option key={p.player_slot} value={String(p.player_slot)}>{playerName(p)}</option>)}</select></div>
       <div className="advanced-item-grid">{players.map(p=><article className="advanced-item-player" key={p.player_slot}>
         <div className="advanced-player-label">{p.hero_image?<img src={p.hero_image} alt={heroName(p)}/>:null}<div><strong>{playerName(p)}</strong><small>{heroName(p)} · {radiant(p)?"Radiant":"Dire"}</small></div></div>
-        <div className="advanced-inventory"><b>{copy(language,"Recorded inventory","Текущий инвентарь")}</b><span>{inventory(p).length?inventory(p).map(id=>`#${id}`).join(" · "):copy(language,"Not provided","Нет данных")}</span></div>
+        <div className="advanced-inventory"><b>{copy(language,"Recorded inventory","Текущий инвентарь")}</b><span>{inventory(p).length?inventory(p).join(" · "):copy(language,"Not provided","Нет данных")}</span></div>
         <div className="advanced-purchases">{(p.purchase_log||[]).length?(p.purchase_log||[]).map((entry,i)=><div key={i}><time>{mmss(Number(entry.time)||0)}</time><span>{cleanKey(entry.key||"unknown")}</span></div>):<small>{copy(language,"No purchase log available.","История покупок недоступна.")}</small>}</div>
       </article>)}</div>
     </Panel>
