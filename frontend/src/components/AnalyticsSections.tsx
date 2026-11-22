@@ -50,6 +50,18 @@ export interface MatchPlayer {
   purchase_log?: Array<{ time?: number; key?: string }> | null;
   kills_log?: Array<{ time?: number; key?: string }> | null;
   ability_upgrades?: Array<{ time?: number; ability?: string; level?: number }> | null;
+  lane_role?: number | null;
+  is_roaming?: boolean | null;
+  damage_taken?: number | null;
+  item_uses?: Record<string, number> | null;
+  ability_uses?: Record<string, number> | null;
+  item_0?: number | null;
+  item_1?: number | null;
+  item_2?: number | null;
+  item_3?: number | null;
+  item_4?: number | null;
+  item_5?: number | null;
+  item_neutral?: number | null;
 }
 
 export interface MatchData {
