@@ -638,6 +638,20 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
       </tbody></table> : <p className="pdf-report-note">No teamfight details available.</p>}
     </section>
 
+    {match.players.some(player => (player.position_events?.length || 0) > 0 || (player.death_events?.length || 0) > 0) && <section className="pdf-report-section">
+      <h2>Player movement coverage</h2>
+      <p className="pdf-report-note">STRATZ playback coordinates are sampled at 10-second intervals. This table reports data coverage; it does not infer movement intent or prove positioning errors.</p>
+      <table className="pdf-report-table">
+        <thead><tr><th>Player</th><th>Position samples</th><th>Death locations</th><th>Position</th></tr></thead>
+        <tbody>{match.players.map(player => <tr key={player.player_slot}>
+          <td>{playerName(player)} · {player.hero_name || "Unknown hero"}</td>
+          <td>{player.position_events?.length || 0}</td>
+          <td>{player.death_events?.length || 0}</td>
+          <td>{player.position?.replace("POSITION_", "Pos ") || player.role || "—"}</td>
+        </tr>)}</tbody>
+      </table>
+    </section>}
+
     {fightReports.length > 0 && <section className="pdf-report-section">
       <h2>Teamfight contribution</h2>
       {fightReports.map(({ fight, index }) => <div key={index} className="pdf-fight-report">
