@@ -158,10 +158,6 @@ function App() {
         </nav>
         <div className="sidebar-footer"><div className="status-dot" />API SYSTEM ONLINE</div>
       </aside>
-      <nav className="mobile-nav" aria-label="Main navigation">
-        {navigation.map(item => { const Icon = item.icon; return <button key={item.name} className={activeTab === item.name ? "active" : ""} onClick={() => { setActiveTab(item.name); setSelectedPlayer(null); }}><Icon size={17}/><span>{item.name}</span></button>; })}
-      </nav>
-
       <main className="main">
         <header className="topbar">
           <div>
