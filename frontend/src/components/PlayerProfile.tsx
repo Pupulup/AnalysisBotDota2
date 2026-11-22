@@ -14,8 +14,9 @@ type Summary = {
 type PlayerAnalytics = {
   account_id: number;
   profile: { personaname: string; avatarfull?: string | null; rank_tier?: number | null; leaderboard_rank?: number | null };
-  patch: { id: number; name: string; date: string };
+  patch: { id: number; name: string; date: string; source?: string };
   mode_category: Mode;
+  data_source: "stratz" | "opendota";
   sample: { count: number; level: "low" | "moderate" | "large" };
   summary: Summary;
   recent_period: Summary;
@@ -23,6 +24,7 @@ type PlayerAnalytics = {
   period_delta: Record<string, number | null> | null;
   insights: Array<{ code: string; severity: "warning" | "info" | "positive"; delta: number | null }>;
   role_breakdown: Array<{ label: string; matches: number; win_rate: number | null; avg_gpm: number | null; avg_xpm: number | null; avg_kda: number | null }>;
+  position_breakdown: Array<{ position: string; label: string; matches: number; win_rate: number | null; avg_gpm: number | null; avg_xpm: number | null; avg_kda: number | null }>;
   hero_breakdown: Array<{ hero_id: number; hero_name: string; hero_image?: string | null; matches: number; win_rate: number | null; avg_gpm: number | null; avg_kda: number | null }>;
   matches: Array<{ match_id: number; start_time: number | null; win: boolean | null; hero_name: string; hero_image?: string | null; lane_role_name: string; kills: number; deaths: number; assists: number; gold_per_min: number | null; xp_per_min: number | null; hero_damage: number | null }>;
   trend: Array<{ match_id: number; start_time: number | null; win: boolean | null; hero_name: string; hero_image?: string | null; lane_role_name: string; kills: number; deaths: number; assists: number; gold_per_min: number | null; xp_per_min: number | null; hero_damage: number | null }>;
@@ -97,6 +99,7 @@ export default function PlayerProfile({ language }: { language: Lang }) {
   }
 
   const summary = data?.summary;
+  const roleRows = data?.position_breakdown.length ? data.position_breakdown : data?.role_breakdown || [];
   const sampleLabel = data?.sample.level === "large"
     ? copy(language, "Large sample", "Большая выборка")
     : data?.sample.level === "moderate"
@@ -159,6 +162,7 @@ export default function PlayerProfile({ language }: { language: Lang }) {
       <div className="player-profile-meta">
         <span>{copy(language, "Mode", "Режим")}: <b>{mode === "ranked" ? copy(language, "Ranked", "Рейтинг") : mode === "turbo" ? "Turbo" : mode === "unranked" ? copy(language, "Unranked", "Обычный подбор") : copy(language, "Other", "Другие")}</b></span>
         <span>{copy(language, "Matches in sample", "Матчей в выборке")}: <b>{data.sample.count}</b></span>
+        <span>{copy(language, "Source", "Источник")}: <b>{data.data_source.toUpperCase()}</b></span>
         <span className={data.sample.level === "low" ? "sample-low" : data.sample.level === "moderate" ? "sample-medium" : "sample-large"}>{sampleLabel}</span>
       </div>
 
@@ -205,10 +209,10 @@ export default function PlayerProfile({ language }: { language: Lang }) {
       </Panel>
 
       <div className="player-analytics-columns">
-        <Panel title={copy(language, "Performance by lane role", "Эффективность по линии")} subtitle={copy(language, "SELF-COMPARISON · NOT A GLOBAL ROLE RATING", "СРАВНЕНИЕ С СОБОЙ · НЕ ГЛОБАЛЬНЫЙ РЕЙТИНГ РОЛИ")}>
+        <Panel title={copy(language, "Performance by position / lane", "Эффективность по позиции / линии")} subtitle={copy(language, "EXACT STRATZ POSITION WHEN AVAILABLE · OTHERWISE OPENDOTA LANE", "ТОЧНАЯ ПОЗИЦИЯ STRATZ ПРИ НАЛИЧИИ · ИНАЧЕ ЛИНИЯ OPENDOTA")}>
           <div className="player-analytics-table"><div className="player-analytics-row player-analytics-head"><span>{copy(language, "Lane", "Линия")}</span><span>{copy(language, "Games", "Матчи")}</span><span>Win%</span><span>GPM</span><span>KDA</span></div>
-            {data.role_breakdown.map(row => <div className="player-analytics-row" key={row.label}><strong>{laneLabel(row.label, language)}</strong><span>{row.matches}</span><span>{number(row.win_rate, 1)}</span><span>{number(row.avg_gpm)}</span><span>{number(row.avg_kda, 2)}</span></div>)}
-            {!data.role_breakdown.length && <p className="player-analytics-empty">{copy(language, "Lane role data is unavailable.", "Данные о линии недоступны.")}</p>}
+            {roleRows.map(row => <div className="player-analytics-row" key={row.label}><strong>{laneLabel(row.label, language)}</strong><span>{row.matches}</span><span>{number(row.win_rate, 1)}</span><span>{number(row.avg_gpm)}</span><span>{number(row.avg_kda, 2)}</span></div>)}
+            {!roleRows.length && <p className="player-analytics-empty">{copy(language, "Lane role data is unavailable.", "Данные о линии недоступны.")}</p>}
           </div>
         </Panel>
         <Panel title={copy(language, "Most played heroes", "Чаще всего используемые герои")} subtitle={copy(language, "CURRENT PATCH AND SELECTED MODE", "ТЕКУЩИЙ ПАТЧ И ВЫБРАННЫЙ РЕЖИМ")}>
