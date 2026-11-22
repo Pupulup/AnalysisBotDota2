@@ -51,6 +51,29 @@ def normalize_opendota_items(values: dict | None, items: dict) -> list[dict]:
     return sorted(result, key=lambda entry: entry["matches"], reverse=True)
 
 
+def normalize_ability_rows(rows: list[dict] | None, ability_ids: dict, abilities: dict) -> list[dict]:
+    result = []
+    for row in rows or []:
+        ability_id = int(row.get("abilityId") or 0)
+        ability_key = ability_ids.get(str(ability_id)) or ability_ids.get(ability_id)
+        ability = abilities.get(ability_key, {}) if ability_key else {}
+        matches = int(row.get("matchCount") or 0)
+        wins = int(row.get("winCount") or 0)
+        result.append({
+            "ability_id": ability_id,
+            "name": ability.get("dname") or ability_key or f"Ability #{ability_id}",
+            "level": row.get("level"),
+            "time": row.get("time"),
+            "time_average": row.get("timeAverage"),
+            "matches": matches,
+            "wins": wins,
+            "win_rate": (wins / matches * 100) if matches else None,
+        })
+    return sorted(result, key=lambda entry: (entry["level"] or 99, -entry["matches"]))
+
+
+
+
 @router.get("/heroes")
 async def get_guide_heroes():
     try:
@@ -81,6 +104,13 @@ async def get_hero_guide(
             opendota.get_hero_stats(),
             opendota.get_items(),
         )
+        try:
+            ability_ids, ability_constants = await asyncio.gather(
+                opendota.get_ability_ids(),
+                opendota.get_abilities(),
+            )
+        except OpenDotaError:
+            ability_ids, ability_constants = {}, {}
         hero = next((entry for entry in heroes if int(entry.get("id") or 0) == hero_id), None)
         if hero is None:
             raise HTTPException(status_code=404, detail="Герой не найден.")
@@ -90,7 +120,8 @@ async def get_hero_guide(
         matchup_data_available = False
 
         build = {}
-        abilities = []
+        first_points = []
+        max_levels = []
         talents = []
         data_source = "opendota"
         if stratz.enabled:
@@ -103,8 +134,9 @@ async def get_hero_guide(
                     "mid": normalize_stratz_items(stats.get("midItems"), items),
                     "late": normalize_stratz_items(stats.get("lateItems"), items),
                 }
-                abilities = stats.get("abilities") or []
-                talents = stats.get("talents") or []
+                first_points = normalize_ability_rows(stats.get("firstPoints"), ability_ids, ability_constants)
+                max_levels = normalize_ability_rows(stats.get("maxLevels"), ability_ids, ability_constants)
+                talents = normalize_ability_rows(stats.get("talents"), ability_ids, ability_constants)
 
                 matchup = stats.get("heroVsHeroMatchup") or {}
                 advantages = matchup.get("advantage") or []
@@ -194,7 +226,8 @@ async def get_hero_guide(
                 "image": hero.get("img"),
             },
             "build": build,
-            "abilities": abilities,
+            "first_points": first_points,
+            "max_levels": max_levels,
             "talents": talents,
             "enemy_matchups": selected_matchups,
             "ally_synergies": ally_synergies,
