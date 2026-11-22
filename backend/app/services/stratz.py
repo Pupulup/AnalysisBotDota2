@@ -160,10 +160,9 @@ class StratzClient:
             raise StratzError(f"Ошибка GraphQL STRATZ: {messages}")
 
         data = payload.get("data") or {}
-        match = data.get("match")
-        if not isinstance(match, dict):
-            raise StratzError("STRATZ не вернул данные для указанного матча.")
-        return match
+        if not isinstance(data, dict) or not data:
+            raise StratzError("STRATZ вернул пустой ответ GraphQL.")
+        return data
 
     @staticmethod
     def timestamp(value: Any) -> int | None:
@@ -188,15 +187,21 @@ class StratzClient:
         if not self.enabled:
             raise StratzError("STRATZ_API_KEY не настроен.")
         data = await self._graphql(GUIDE_QUERY, {"heroId": hero_id})
+        if not isinstance(data.get("heroStats"), dict):
+            raise StratzError("STRATZ не вернул статистику гайда для этого героя.")
         return data
 
     async def get_match(self, match_id: int, include_playback: bool = True) -> dict[str, Any]:
-        match = await self._graphql(MATCH_QUERY, match_id)
+        data = await self._graphql(MATCH_QUERY, match_id)
+        match = data.get("match")
+        if not isinstance(match, dict):
+            raise StratzError("STRATZ не вернул данные для указанного матча.")
         start_time = self.timestamp(match.get("startDateTime"))
         if include_playback and start_time is not None:
             age_seconds = int(datetime.now(timezone.utc).timestamp()) - start_time
             if 0 <= age_seconds <= 90 * 24 * 60 * 60:
-                playback_match = await self._graphql(PLAYBACK_QUERY, match_id)
+                playback_data = await self._graphql(PLAYBACK_QUERY, match_id)
+                playback_match = playback_data.get("match") or {}
                 playback_players = playback_match.get("players") or []
                 playback_by_account = {
                     str(player.get("steamAccountId")): player.get("playbackData") or {}
