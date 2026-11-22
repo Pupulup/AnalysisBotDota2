@@ -51,7 +51,7 @@ export interface MatchPlayer {
   gold_t?: number[] | null;
   xp_t?: number[] | null;
   lh_t?: number[] | null;
-  purchase_log?: Array<{ time?: number; key?: string }> | null;
+  purchase_log?: Array<{ time?: number; key?: string; item_id?: number }> | null;
   kills_log?: Array<{ time?: number; key?: string }> | null;
   ability_upgrades?: Array<{ time?: number; ability?: string; level?: number }> | null;
   lane_role?: number | null;
@@ -66,7 +66,7 @@ export interface MatchPlayer {
   item_4?: number | null;
   item_5?: number | null;
   item_neutral?: number | null;
-  item_inventory?: Array<{ id: number; name: string; slot: string }> | null;
+  item_inventory?: Array<{ id: number; name: string; key?: string | null; slot: string }> | null;
 }
 
 export interface MatchData {
