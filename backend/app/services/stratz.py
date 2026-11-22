@@ -200,14 +200,19 @@ class StratzClient:
         if include_playback and start_time is not None:
             age_seconds = int(datetime.now(timezone.utc).timestamp()) - start_time
             if 0 <= age_seconds <= 90 * 24 * 60 * 60:
-                playback_data = await self._graphql(PLAYBACK_QUERY, match_id)
-                playback_match = playback_data.get("match") or {}
-                playback_players = playback_match.get("players") or []
-                playback_by_account = {
-                    str(player.get("steamAccountId")): player.get("playbackData") or {}
-                    for player in playback_players
-                }
-                for player in match.get("players") or []:
-                    account_id = str(player.get("steamAccountId"))
-                    player["_playback"] = playback_by_account.get(account_id, {})
+                try:
+                    playback_data = await self._graphql(PLAYBACK_QUERY, match_id)
+                    playback_match = playback_data.get("match") or {}
+                    playback_players = playback_match.get("players") or []
+                    playback_by_account = {
+                        str(player.get("steamAccountId")): player.get("playbackData") or {}
+                        for player in playback_players
+                    }
+                    for player in match.get("players") or []:
+                        account_id = str(player.get("steamAccountId"))
+                        player["_playback"] = playback_by_account.get(account_id, {})
+                except StratzError:
+                    # Keep the STRATZ match summary even when playback is unavailable.
+                    for player in match.get("players") or []:
+                        player["_playback"] = {}
         return match
