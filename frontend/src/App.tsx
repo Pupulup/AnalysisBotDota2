@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Swords, Users, ChartNoAxesCombined, Trophy, Activity,
-  ChevronRight, Search, Clock, Shield, RefreshCw
+  ChevronRight, Search, Clock, Shield, RefreshCw, Flame, Package, Coins, ShieldCheck, TrendingUp
 } from "lucide-react";
 import {
   AnalysisSection,
@@ -13,6 +13,8 @@ import {
   TimelineSection,
   TeamsSection
 } from "./components/AnalyticsSections";
+import AdvancedAnalytics from "./components/AdvancedAnalytics";
+import { Language, Localize } from "./i18n";
 import "./App.css";
 
 const API_URL = "";
@@ -22,7 +24,12 @@ const navigation = [
   { name: "Players", icon: Users },
   { name: "Timeline", icon: ChartNoAxesCombined },
   { name: "Teams", icon: Swords },
-  { name: "Analysis", icon: Trophy }
+  { name: "Analysis", icon: Trophy },
+  { name: "Fights", icon: Flame },
+  { name: "Items", icon: Package },
+  { name: "Economy", icon: Coins },
+  { name: "Roles", icon: ShieldCheck },
+  { name: "Trends", icon: TrendingUp }
 ];
 
 function formatDuration(seconds: number) {
@@ -37,6 +44,15 @@ function App() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("Overview");
   const [selectedPlayer, setSelectedPlayer] = useState<MatchPlayer | null>(null);
+  const [language, setLanguage] = useState<Language>(() => {
+    const saved = localStorage.getItem("dota-analytics-language");
+    return saved === "ru" ? "ru" : "en";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("dota-analytics-language", language);
+    document.documentElement.lang = language;
+  }, [language]);
 
   async function analyzeMatch() {
     const normalizedId = matchId.trim();
@@ -80,6 +96,12 @@ function App() {
         return <TeamsSection match={match} />;
       case "Analysis":
         return <AnalysisSection match={match} />;
+      case "Fights":
+      case "Items":
+      case "Economy":
+      case "Roles":
+      case "Trends":
+        return <AdvancedAnalytics match={match} language={language} section={activeTab} />;
       case "Overview":
       default:
         return <OverviewSection match={match} />;
@@ -91,10 +113,16 @@ function App() {
     Players: "Player Statistics",
     Timeline: "Match Timeline",
     Teams: "Team Comparison",
-    Analysis: "Match Analysis"
+    Analysis: "Match Analysis",
+    Fights: "Teamfight Analysis",
+    Items: "Item Builds",
+    Economy: "Economy Analysis",
+    Roles: "Role Analysis",
+    Trends: "Player Trends"
   };
 
   return (
+    <Localize language={language}>
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
@@ -130,7 +158,10 @@ function App() {
             <span className="breadcrumb">WORKSPACE /</span>
             <span className="breadcrumb-current"> {activeTab.toUpperCase()}</span>
           </div>
-          <div className="version">BETA 1.1</div>
+          <div className="topbar-actions">
+            <label className="language-switcher"><span>LANG</span><select aria-label="Interface language" value={language} onChange={event => setLanguage(event.target.value as Language)}><option value="en">English</option><option value="ru">Русский</option></select></label>
+            <div className="version">BETA 1.2</div>
+          </div>
         </header>
 
         <section className="content">
@@ -225,6 +256,7 @@ function App() {
         </section>
       </main>
     </div>
+    </Localize>
   );
 }
 
