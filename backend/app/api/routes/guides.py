@@ -119,14 +119,22 @@ async def get_hero_guide(
             except StratzError:
                 pass
 
-        if not build:
-            popularity = await opendota.get_hero_item_popularity(hero_id)
-            build = {
-                "starting": normalize_opendota_items(popularity.get("start_game_items"), items),
-                "early": normalize_opendota_items(popularity.get("early_game_items"), items),
-                "mid": normalize_opendota_items(popularity.get("mid_game_items"), items),
-                "late": normalize_opendota_items(popularity.get("late_game_items"), items),
-            }
+        popularity = await opendota.get_hero_item_popularity(hero_id)
+        fallback_build = {
+            "starting": normalize_opendota_items(popularity.get("start_game_items"), items),
+            "early": normalize_opendota_items(popularity.get("early_game_items"), items),
+            "mid": normalize_opendota_items(popularity.get("mid_game_items"), items),
+            "late": normalize_opendota_items(popularity.get("late_game_items"), items),
+        }
+        build = {
+            phase: build.get(phase) or fallback_build[phase]
+            for phase in ("starting", "early", "mid", "late")
+        }
+        if data_source == "stratz+opendota" and any(
+            not build.get(phase) and fallback_build.get(phase)
+            for phase in ("starting", "early", "mid", "late")
+        ):
+            data_source = "stratz+opendota"
 
         return {
             "hero": {
