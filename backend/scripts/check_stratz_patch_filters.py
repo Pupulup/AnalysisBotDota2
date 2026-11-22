@@ -47,6 +47,7 @@ def describe_http_error(response: httpx.Response, token: str) -> str:
         f"Content-Type: {response.headers.get('content-type', 'unknown')}",
         f"Server: {response.headers.get('server', 'unknown')}",
         f"CF-Ray: {response.headers.get('cf-ray', 'not present')}",
+        f"CF-Mitigated: {response.headers.get('cf-mitigated', 'not present')}",
         f"Request ID: {response.headers.get('x-request-id', 'not present')}",
     ]
     body = response.text[:800].replace(token, "[REDACTED]")
