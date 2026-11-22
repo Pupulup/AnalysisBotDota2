@@ -33,6 +33,17 @@ const number = (value: number | null | undefined, digits = 0) =>
   value == null ? "—" : new Intl.NumberFormat("en-US", { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(value);
 const dateLabel = (timestamp: number | null | undefined) =>
   timestamp ? new Date(timestamp * 1000).toLocaleDateString() : "—";
+const laneLabel = (label: string, language: Lang) => {
+  if (language === "en") return label;
+  const labels: Record<string, string> = {
+    "Safe lane": "Лёгкая линия",
+    "Mid lane": "Центральная линия",
+    "Off lane": "Сложная линия",
+    "Jungle": "Лес",
+    "Unknown lane": "Линия неизвестна",
+  };
+  return labels[label] || label;
+};
 const rankLabel = (tier?: number | null) => {
   if (!tier) return "—";
   const names = ["", "Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"];
@@ -183,7 +194,7 @@ export default function PlayerProfile({ language }: { language: Lang }) {
       <div className="player-analytics-columns">
         <Panel title={copy(language, "Performance by lane role", "Эффективность по линии")} subtitle={copy(language, "SELF-COMPARISON · NOT A GLOBAL ROLE RATING", "СРАВНЕНИЕ С СОБОЙ · НЕ ГЛОБАЛЬНЫЙ РЕЙТИНГ РОЛИ")}>
           <div className="player-analytics-table"><div className="player-analytics-row player-analytics-head"><span>{copy(language, "Lane", "Линия")}</span><span>{copy(language, "Games", "Матчи")}</span><span>Win%</span><span>GPM</span><span>KDA</span></div>
-            {data.role_breakdown.map(row => <div className="player-analytics-row" key={row.label}><strong>{row.label}</strong><span>{row.matches}</span><span>{number(row.win_rate, 1)}</span><span>{number(row.avg_gpm)}</span><span>{number(row.avg_kda, 2)}</span></div>)}
+            {data.role_breakdown.map(row => <div className="player-analytics-row" key={row.label}><strong>{laneLabel(row.label, language)}</strong><span>{row.matches}</span><span>{number(row.win_rate, 1)}</span><span>{number(row.avg_gpm)}</span><span>{number(row.avg_kda, 2)}</span></div>)}
             {!data.role_breakdown.length && <p className="player-analytics-empty">{copy(language, "Lane role data is unavailable.", "Данные о линии недоступны.")}</p>}
           </div>
         </Panel>
