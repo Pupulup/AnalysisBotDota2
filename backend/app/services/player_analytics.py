@@ -131,6 +131,24 @@ def build_player_analytics(
                 else None
             )
 
+    insights = []
+    if previous_summary and previous_summary["matches"]:
+        for metric, threshold, code, severity in (
+            ("avg_deaths", 1.0, "deaths_increased", "warning"),
+            ("avg_kda", -0.5, "kda_decreased", "warning"),
+            ("avg_gpm", -35.0, "gpm_decreased", "info"),
+            ("win_rate", -10.0, "win_rate_decreased", "warning"),
+        ):
+            delta = deltas.get(metric) if deltas else None
+            if delta is not None and ((metric == "avg_deaths" and delta >= threshold) or (metric != "avg_deaths" and delta <= threshold)):
+                insights.append({"code": code, "severity": severity, "delta": delta})
+        if deltas and deltas.get("avg_gpm") is not None and deltas["avg_gpm"] >= 35:
+            insights.append({"code": "gpm_improved", "severity": "positive", "delta": deltas["avg_gpm"]})
+        if deltas and deltas.get("avg_kda") is not None and deltas["avg_kda"] >= 0.5:
+            insights.append({"code": "kda_improved", "severity": "positive", "delta": deltas["avg_kda"]})
+    else:
+        insights.append({"code": "insufficient_history", "severity": "info", "delta": None})
+
     count = len(ordered)
     sample_level = "low" if count < 10 else "moderate" if count < 30 else "large"
     profile_data = profile.get("profile") or {}
@@ -144,11 +162,12 @@ def build_player_analytics(
         },
         "patch": patch,
         "mode_category": mode_category,
-        "sample": {"count": count, "level": sample_level, "requested": len(ordered)},
+        "sample": {"count": count, "level": sample_level},
         "summary": summary,
         "recent_period": recent_summary,
         "previous_period": previous_summary,
         "period_delta": deltas,
+        "insights": insights[:4],
         "role_breakdown": role_breakdown,
         "hero_breakdown": hero_breakdown[:8],
         "matches": normalized_matches,
