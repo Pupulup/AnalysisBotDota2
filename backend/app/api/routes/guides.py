@@ -189,11 +189,15 @@ async def get_hero_guide(
             except StratzError:
                 pass
 
-        if enemy_hero_ids and not selected_matchups:
+        missing_enemy_ids = [
+            enemy_id for enemy_id in enemy_hero_ids
+            if enemy_id not in {row["hero_id"] for row in selected_matchups}
+        ]
+        if missing_enemy_ids:
             try:
                 opendota_matchups = await opendota.get_hero_matchups(hero_id)
                 matchup_by_hero = {int(row.get("hero_id") or 0): row for row in opendota_matchups}
-                for enemy_id in enemy_hero_ids:
+                for enemy_id in missing_enemy_ids:
                     row = matchup_by_hero.get(enemy_id)
                     if row:
                         games = int(row.get("games_played") or 0)
