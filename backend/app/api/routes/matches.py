@@ -27,10 +27,22 @@ def replay_allowed(start_time: int | None) -> bool:
     return 0 <= now - start_time <= MAX_REPLAY_AGE_DAYS * 86400
 
 
-def normalize_stratz_match(data: dict, match_id: int, items: dict) -> MatchResponse:
+def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data: dict | None = None) -> MatchResponse:
     start_time = stratz.timestamp(data.get("startDateTime"))
     age_days = replay_age_days(start_time)
     raw_players = data.get("players") or []
+    fallback_data = fallback_data or {}
+    fallback_players = fallback_data.get("players") or []
+    fallback_by_account = {
+        str(player.get("account_id")): player
+        for player in fallback_players
+        if player.get("account_id") is not None
+    }
+    fallback_by_slot = {
+        int(player.get("player_slot")): player
+        for player in fallback_players
+        if player.get("player_slot") is not None
+    }
     team_positions = {True: 0, False: 0}
     players = []
     has_playback = False
@@ -48,6 +60,11 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict) -> MatchRespo
         if short_name.startswith("npc_dota_hero_"):
             short_name = short_name.removeprefix("npc_dota_hero_")
 
+        fallback_player = (
+            fallback_by_account.get(str(raw.get("steamAccountId")))
+            or fallback_by_slot.get(int(slot))
+            or {}
+        )
         player = {
             "account_id": raw.get("steamAccountId"),
             "player_slot": int(slot),
@@ -107,6 +124,19 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict) -> MatchRespo
 
         if playback.get("deathEvents") or playback.get("goldEvents"):
             has_playback = True
+
+        # STRATZ remains authoritative for core match/player metrics.
+        # OpenDota fills fields not selected from STRATZ and fills STRATZ nulls.
+        supplemental_fields = (
+            "teamfight_participation", "stuns", "obs", "sen", "obs_placed",
+            "sen_placed", "tower_kills", "roshan_kills", "buyback_count",
+            "times", "gold_t", "xp_t", "lh_t", "kills_log", "ability_upgrades",
+            "lane_role", "is_roaming", "damage_taken", "item_uses", "ability_uses",
+            "item_neutral", "camps_stacked", "rune_pickups", "firstblood_claimed",
+        )
+        for field in supplemental_fields:
+            if player.get(field) is None and fallback_player.get(field) is not None:
+                player[field] = fallback_player[field]
         players.append(player)
 
     players.sort(key=lambda player: player["player_slot"])
@@ -121,10 +151,14 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict) -> MatchRespo
         lobby_type=data.get("lobbyType"),
         human_players=len(raw_players),
         is_parsed=has_playback,
-        data_source="stratz",
+        data_source="stratz+opendota" if fallback_data else "stratz",
         replay_age_days=age_days,
         replay_analysis_allowed=replay_allowed(start_time),
         players=players,
+        radiant_gold_adv=fallback_data.get("radiant_gold_adv"),
+        radiant_xp_adv=fallback_data.get("radiant_xp_adv"),
+        objectives=fallback_data.get("objectives"),
+        teamfights=fallback_data.get("teamfights"),
     )
 
 
@@ -181,7 +215,12 @@ async def get_match(
                     items = await opendota.get_items()
                 except OpenDotaError:
                     items = {}
-                return normalize_stratz_match(stratz_data, match_id, items)
+                try:
+                    # Supplemental fields not requested from STRATZ are sourced from OpenDota.
+                    fallback_data = await opendota.get_match(match_id)
+                except OpenDotaError:
+                    fallback_data = {}
+                return normalize_stratz_match(stratz_data, match_id, items, fallback_data)
             except StratzError:
                 pass
 
