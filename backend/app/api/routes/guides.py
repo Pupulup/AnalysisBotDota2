@@ -229,7 +229,21 @@ async def get_hero_guide(
         ):
             data_source = "stratz+opendota"
 
+        try:
+            current_patch = (
+                await stratz.get_current_game_version()
+                if stratz.enabled
+                else await opendota.get_current_patch()
+            )
+        except (StratzError, OpenDotaError):
+            current_patch = None
+
         return {
+            "current_patch": current_patch,
+            "patch_scope_verified": False,
+            "patch_scope_note": (
+                "Hero aggregate queries are not yet verified as restricted to the current game version."
+            ),
             "hero": {
                 "id": hero_id,
                 "name": hero.get("localized_name") or hero.get("name"),
