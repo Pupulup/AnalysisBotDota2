@@ -141,7 +141,7 @@ async def get_hero_guide(
                 talents = normalize_ability_rows(stats.get("talents"), ability_ids, ability_constants)
 
                 matchup = stats.get("heroVsHeroMatchup") or {}
-                advantages = matchup.get("advantage") or []
+                advantages = (matchup.get("advantage") or []) + (matchup.get("disadvantage") or [])
                 hero_advantage = next(
                     (entry for entry in advantages if int(entry.get("heroId") or 0) == hero_id),
                     advantages[0] if advantages else {},
@@ -164,7 +164,7 @@ async def get_hero_guide(
                             "hero_id": ally_id,
                             "games": games,
                             "wins": wins,
-                            "win_rate": (wins / games * 100) if games else None,
+                            "win_rate": row.get("winRateHeroId1") if row.get("winRateHeroId1") is not None else ((wins / games * 100) if games else None),
                             "edge": row.get("synergy"),
                         })
 
