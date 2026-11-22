@@ -57,7 +57,7 @@ query GetMatch($matchId: Long!) {
 GUIDE_QUERY = """
 query HeroGuide($heroId: Short!, $matchLimit: Int!) {
   heroStats {
-    startingItems: itemFullPurchase(heroId: $heroId, minTime: 0, maxTime: 0) {
+    startingItems: itemStartingPurchase(heroId: $heroId) {
       matchCount
       winCount
       itemId
@@ -77,15 +77,24 @@ query HeroGuide($heroId: Short!, $matchLimit: Int!) {
       winCount
       itemId
     }
+    firstPoints: abilityMinLevel(heroId: $heroId) {
+      matchCount
+      winCount
+      abilityId
+      level
+    }
+    maxLevels: abilityMaxLevel(heroId: $heroId) {
+      matchCount
+      winCount
+      abilityId
+      level
+    }
     talents: talent(heroId: $heroId) {
       matchCount
       winCount
       abilityId
-    }
-    abilities: ability(heroId: $heroId) {
-      matchCount
-      winCount
-      abilityId
+      time
+      timeAverage
     }
     heroVsHeroMatchup(heroId: $heroId, matchLimit: $matchLimit) {
       advantage {
@@ -107,8 +116,7 @@ query HeroGuide($heroId: Short!, $matchLimit: Int!) {
       }
     }
   }
-}
-"""
+}"""
 
 PLAYBACK_QUERY = """
 query GetMatchPlayback($matchId: Long!) {
