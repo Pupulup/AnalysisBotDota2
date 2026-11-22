@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import type { ReactNode } from "react";
 import ReactECharts from "echarts-for-react";
 import { MatchData, MatchPlayer, playerName } from "./AnalyticsSections";
 import "./AdvancedAnalytics.css";
@@ -13,7 +14,7 @@ const radiant = (p: MatchPlayer) => p.player_slot < 128;
 const heroName = (p: MatchPlayer) => p.hero_name || (p.hero_id ? `Hero ${p.hero_id}` : "Unknown hero");
 const cleanKey = (key: string) => key.replace(/^item_/, "").replace(/_/g, " ");
 
-function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return <section className="analytics-panel"><div className="analytics-panel-heading"><div><h2>{title}</h2>{subtitle && <span>{subtitle}</span>}</div></div>{children}</section>;
 }
 
@@ -112,6 +113,7 @@ function TrendsSection({ match, language }: Props) {
   const [rows,setRows]=useState<Array<{id:number;match:MatchData;player:MatchPlayer|null}>>([]);
   const selectedPlayer=match.players.find(p=>String(p.account_id ?? p.player_slot)===selected);
   async function compare(){
+    if (!selectedPlayer) { setError(copy(language,"Select a player with available match data.","Выберите игрока с доступными данными.")); return; }
     const ids=[...new Set(idsText.split(/[\s,;]+/).map(x=>x.trim()).filter(x=>/^\d+$/.test(x)).map(Number))].slice(0,10);
     if(!ids.length){setError(copy(language,"Enter at least one valid match ID.","Введите хотя бы один корректный ID матча."));return;}
     setLoading(true);setError("");
