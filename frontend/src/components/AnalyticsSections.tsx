@@ -429,6 +429,9 @@ function playerInsight(player: MatchPlayer, allPlayers: MatchPlayer[]) {
   if (player.kills + player.assists >= 10) positives.push("High kill participation through kills and assists.");
   if (player.hero_damage >= allPlayers.reduce((m, p) => Math.max(m, p.hero_damage), 0) * 0.85) positives.push("One of the match leaders in hero damage.");
   if (player.tower_damage > 1500) positives.push("Meaningful contribution to structural damage.");
+  if ((player.obs_placed || 0) + (player.sen_placed || 0) >= 8) positives.push("Strong vision contribution through observer and sentry wards.");
+  if (player.hero_healing > 1000) positives.push("Meaningful healing contribution.");
+  if ((player.camps_stacked || 0) >= 3) positives.push("Useful jungle support through stacked camps.");
   if (player.net_worth >= allPlayers.reduce((m, p) => Math.max(m, p.net_worth), 0) * 0.85) positives.push("Among the strongest players by net worth.");
   if (player.deaths >= 10) concerns.push("High death count; review positioning and fight selection.");
   if (player.tower_damage < 300 && player.kills + player.assists > 8) concerns.push("Low building damage relative to combat involvement.");
@@ -548,7 +551,7 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
           <td>{playerScore(p, match.players).toFixed(0)}</td>
         </tr>)}</tbody>
       </table>
-      <p className="pdf-report-note">Performance score is a heuristic, relative to the players in this match. It is not an official Dota 2 rating.</p>
+      <p className="pdf-report-note">Performance score uses within-match percentile ranks across combat, utility, objectives, economy and survival. It is a heuristic, not an official Dota 2 rating.</p>
     </section>
 
     <section className="pdf-report-section">
@@ -659,7 +662,7 @@ export function AnalysisSection({ match }: { match: MatchData }) {
         <div><Swords size={20} /><span>Combat damage</span><strong>{number(winnerDamage || loserDamage)}</strong><small>{match.radiant_win === null ? "Team result is unknown" : "Hero damage by winning team"}</small></div>
         <div><Users size={20} /><span>Match data</span><strong>{match.players.length} players</strong><small>{match.is_parsed ? "Parsed player statistics" : "Partial match data"}</small></div>
       </div>
-      <p className="analytics-method-note">Performance score is a heuristic indicator calculated from KDA, GPM, hero damage, tower damage, teamfight participation (when supplied) and healing. It is not an official Dota 2 rating and should not be interpreted as a causal measure of a player's impact.</p>
+      <p className="analytics-method-note">Performance score is a role-neutral heuristic using within-match percentile ranks for combat, wards and utility, objectives, economy and survival. GPM and last hits have limited weight; missing categories are excluded and remaining weights are renormalized. It is not an official or causal rating.</p>
     </Panel>
     <Panel title="Individual player contribution" subtitle="COMBAT · ECONOMY · OBJECTIVES · SUPPORT">
       <div className="analytics-contribution-table">
