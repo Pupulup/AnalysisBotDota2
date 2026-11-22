@@ -379,8 +379,8 @@ function reportTime(value?: number | null) {
 }
 
 function reportDate(value?: number | null) {
-  if (!value) return "—";
-  return new Date(value * 1000).toISOString().replace("T", " ").slice(0, 16) + " UTC";
+  if (value == null || !Number.isFinite(Number(value)) || Number(value) <= 0) return "—";
+  return new Date(Number(value) * 1000).toISOString().replace("T", " ").slice(0, 16) + " UTC";
 }
 
 function readableKey(value?: string | null) {
