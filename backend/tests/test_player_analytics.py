@@ -16,7 +16,7 @@ class PlayerAnalyticsTests(unittest.TestCase):
             },
             {
                 "match_id": 2, "start_time": 200, "duration": 2200,
-                "radiant_win": False, "player_slot": 128, "game_mode": 1,
+                "radiant_win": True, "player_slot": 128, "game_mode": 1,
                 "lobby_type": 7, "lane_role": 2, "hero_id": 1,
                 "kills": 4, "deaths": 5, "assists": 8,
                 "gold_per_min": 500, "xp_per_min": 600,
