@@ -133,10 +133,15 @@ async def request_match_parse(
     match_id: int = Path(..., gt=0, description="Dota 2 Match ID")
 ):
     try:
+        start_time = None
         if stratz.enabled:
-            match_data = await stratz.get_match(match_id, include_playback=False)
-            start_time = stratz.timestamp(match_data.get("startDateTime"))
-        else:
+            try:
+                match_data = await stratz.get_match(match_id, include_playback=False)
+                start_time = stratz.timestamp(match_data.get("startDateTime"))
+            except StratzError:
+                pass
+
+        if start_time is None:
             match_data = await opendota.get_match(match_id)
             start_time = match_data.get("start_time")
 
