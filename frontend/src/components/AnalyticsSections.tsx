@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Users
 } from "lucide-react";
+import { Localize, translateText, useLanguage } from "../i18n";
 import "./AnalyticsSections.css";
 
 export interface MatchPlayer {
@@ -50,6 +51,19 @@ export interface MatchPlayer {
   purchase_log?: Array<{ time?: number; key?: string }> | null;
   kills_log?: Array<{ time?: number; key?: string }> | null;
   ability_upgrades?: Array<{ time?: number; ability?: string; level?: number }> | null;
+  lane_role?: number | null;
+  is_roaming?: boolean | null;
+  damage_taken?: unknown;
+  item_uses?: Record<string, number> | null;
+  ability_uses?: Record<string, number> | null;
+  item_0?: number | null;
+  item_1?: number | null;
+  item_2?: number | null;
+  item_3?: number | null;
+  item_4?: number | null;
+  item_5?: number | null;
+  item_neutral?: number | null;
+  item_inventory?: Array<{ id: number; name: string; slot: string }> | null;
 }
 
 export interface MatchData {
@@ -83,20 +97,22 @@ const radiant = (p: MatchPlayer) => p.player_slot < 128;
 function Metric({ label, value, icon: Icon, tone = "" }: {
   label: string; value: string; icon: ElementType; tone?: string;
 }) {
+  const language = useLanguage();
   return <div className="analytics-metric">
     <div className={`analytics-metric-icon ${tone}`}><Icon size={18} /></div>
-    <span>{label}</span><strong>{value}</strong>
+    <span>{translateText(label, language)}</span><strong>{value}</strong>
   </div>;
 }
 
 function Panel({ title, subtitle, children }: {
   title: string; subtitle?: string; children: ReactNode;
 }) {
+  const language = useLanguage();
   return <section className="analytics-panel">
     <div className="analytics-panel-heading">
-      <div><h2>{title}</h2>{subtitle && <span>{subtitle}</span>}</div>
+      <div><h2>{translateText(title, language)}</h2>{subtitle && <span>{translateText(subtitle, language)}</span>}</div>
     </div>
-    {children}
+    <Localize language={language}>{children}</Localize>
   </section>;
 }
 
@@ -148,7 +164,8 @@ export function OverviewSection({ match }: { match: MatchData }) {
 }
 
 function PlayerCard({ player, onSelect }: { player: MatchPlayer; onSelect: (p: MatchPlayer) => void }) {
-  return <button className="analytics-player-row" onClick={() => onSelect(player)}>
+  const language = useLanguage();
+  return <Localize language={language}><button className="analytics-player-row" onClick={() => onSelect(player)}>
     <div className="analytics-player-identity">
       {player.hero_image ? <img src={player.hero_image} alt={player.hero_name || "Hero"} /> : <div className="analytics-hero-fallback">?</div>}
       <div><strong>{playerName(player)}</strong><span>{player.hero_name || "Unknown hero"} · LVL {player.level}</span></div>
@@ -158,12 +175,13 @@ function PlayerCard({ player, onSelect }: { player: MatchPlayer; onSelect: (p: M
     <div className="analytics-player-cell"><strong>{number(player.net_worth)}</strong><span>NET WORTH</span></div>
     <div className="analytics-player-cell"><strong>{kda(player).toFixed(2)}</strong><span>KDA</span></div>
     <span className="analytics-open">›</span>
-  </button>;
+  </button></Localize>;
 }
 
 export function PlayersSection({ match, onSelect }: {
   match: MatchData; onSelect: (p: MatchPlayer) => void;
 }) {
+  const language = useLanguage();
   const radiantPlayers = match.players.filter(radiant);
   const direPlayers = match.players.filter(p => !radiant(p));
   const renderTeam = (teamPlayers: MatchPlayer[], team: "radiant" | "dire") =>
@@ -173,16 +191,16 @@ export function PlayersSection({ match, onSelect }: {
       </div>
     </Panel>;
 
-  return <div className="analytics-page">
+  return <Localize language={language}><div className="analytics-page">
     <div className="analytics-section-note">Select a player to open their detailed performance card.</div>
     {renderTeam(radiantPlayers, "radiant")}
     {renderTeam(direPlayers, "dire")}
-  </div>;
+  </div></Localize>;
 }
 
-function timelineOption(match: MatchData, key: "radiant_gold_adv" | "radiant_xp_adv") {
+function timelineOption(match: MatchData, key: "radiant_gold_adv" | "radiant_xp_adv", language: "en" | "ru") {
   const values = match[key] || [];
-  const label = key === "radiant_gold_adv" ? "Gold advantage" : "Experience advantage";
+  const label = language === "ru" ? (key === "radiant_gold_adv" ? "Преимущество по золоту" : "Преимущество по опыту") : (key === "radiant_gold_adv" ? "Gold advantage" : "Experience advantage");
   return {
     backgroundColor: "transparent",
     tooltip: { trigger: "axis", backgroundColor: "#151e2c", borderColor: "#34445d", textStyle: { color: "#edf1fa" } },
@@ -201,6 +219,7 @@ function eventLabel(event: Record<string, any>) {
 }
 
 export function TimelineSection({ match }: { match: MatchData }) {
+  const language = useLanguage();
   const gold = match.radiant_gold_adv || [];
   const xp = match.radiant_xp_adv || [];
   const events = [...(match.objectives || [])].sort((a, b) => (a.time || 0) - (b.time || 0));
@@ -209,10 +228,10 @@ export function TimelineSection({ match }: { match: MatchData }) {
   return <div className="analytics-page">
     {hasTimeline ? <>
       {gold.length > 0 && <Panel title="Gold advantage" subtitle="RADIANT POSITIVE · DIRE NEGATIVE">
-        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_gold_adv")} style={{ height: 300, width: "100%" }} /></div>
+        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_gold_adv", language)} style={{ height: 300, width: "100%" }} /></div>
       </Panel>}
       {xp.length > 0 && <Panel title="Experience advantage" subtitle="RADIANT POSITIVE · DIRE NEGATIVE">
-        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_xp_adv")} style={{ height: 300, width: "100%" }} /></div>
+        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_xp_adv", language)} style={{ height: 300, width: "100%" }} /></div>
       </Panel>}
     </> : <Panel title="Timeline unavailable" subtitle="OPEN DOTA HAS NOT PROVIDED ADVANTAGE SERIES">
       <div className="analytics-empty">This match does not contain parsed gold or experience timeline data. The match overview and player statistics are still available.</div>
@@ -375,7 +394,8 @@ function playerInsight(player: MatchPlayer, allPlayers: MatchPlayer[]) {
 
 function reportTime(value?: number | null) {
   if (value == null || !Number.isFinite(Number(value))) return "—";
-  return duration(Math.max(0, Number(value)));
+  const seconds = Math.trunc(Number(value));
+  return `${seconds < 0 ? "−" : ""}${duration(Math.abs(seconds))}`;
 }
 
 function reportDate(value?: number | null) {
@@ -396,6 +416,7 @@ function optionalNumber(value?: number | null) {
 }
 
 function PlayerProgression({ player }: { player: MatchPlayer }) {
+  const language = useLanguage();
   const times = player.times || [];
   const progression = times
     .map((time, index) => ({ time, index }))
@@ -405,9 +426,9 @@ function PlayerProgression({ player }: { player: MatchPlayer }) {
       Math.floor(time / 300) > Math.floor((times[index - 1] ?? 0) / 300)
     );
 
-  if (!progression.length) return <p className="pdf-report-note">No player progression series available.</p>;
+  if (!progression.length) return <Localize language={language}><p className="pdf-report-note">No player progression series available.</p></Localize>;
 
-  return <div className="pdf-player-progression">
+  return <Localize language={language}><div className="pdf-player-progression">
     <h4>Player progression · 5-minute intervals</h4>
     <table className="pdf-report-table compact">
       <thead><tr><th>Time</th><th>Gold</th><th>Experience</th><th>Last hits</th></tr></thead>
@@ -419,10 +440,11 @@ function PlayerProgression({ player }: { player: MatchPlayer }) {
       </tr>)}</tbody>
     </table>
     <p className="pdf-report-note">Values are cumulative snapshots supplied by OpenDota; unavailable fields are shown as —.</p>
-  </div>;
+  </div></Localize>;
 }
 
 function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlayer[] }) {
+  const language = useLanguage();
   const radiantPlayers = match.players.filter(radiant);
   const direPlayers = match.players.filter(p => !radiant(p));
   const totals = (players: MatchPlayer[]) => ({
@@ -439,8 +461,9 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
   const r = totals(radiantPlayers);
   const d = totals(direPlayers);
   const result = match.radiant_win === null ? "Unknown" : match.radiant_win ? "Radiant victory" : "Dire victory";
+  const fightReports = (match.teamfights || []).map((fight, index) => ({ fight, index }));
 
-  return <article className="match-pdf-report">
+  return <Localize language={language}><article className="match-pdf-report">
     <header className="pdf-report-header">
       <div className="pdf-report-brand">DOTA ANALYTICS · MATCH REPORT</div>
       <h1>Match #{match.match_id}</h1>
@@ -505,6 +528,7 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
           <ReportMetric label="Wards O / S" value={`${optionalNumber(p.obs_placed)} / ${optionalNumber(p.sen_placed)}`} />
           <ReportMetric label="Tower / Roshan kills" value={`${optionalNumber(p.tower_kills)} / ${optionalNumber(p.roshan_kills)}`} />
           <ReportMetric label="Buybacks" value={optionalNumber(p.buyback_count)} />
+          <ReportMetric label="Current inventory" value={p.item_inventory?.map(item => item.name).join(", ") || "—"} />
         </div>
 
         <PlayerProgression player={p} />
@@ -542,11 +566,35 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
           <td>{reportTime(Math.max(0, Number(fight.end || 0) - Number(fight.start || 0)))}</td><td>{Number(fight.deaths || 0)}</td></tr>)}
       </tbody></table> : <p className="pdf-report-note">No teamfight details available.</p>}
     </section>
+
+    {fightReports.length > 0 && <section className="pdf-report-section">
+      <h2>Teamfight contribution</h2>
+      {fightReports.map(({ fight, index }) => <div key={index} className="pdf-fight-report">
+        <h3>{language === "ru" ? "Сражение" : "Fight"} #{index + 1} · {reportTime(Number(fight.start))} · {Number(fight.deaths || 0)} {language === "ru" ? "смертей" : "deaths"}</h3>
+        <table className="pdf-report-table compact">
+          <thead><tr><th>Player / Hero</th><th>Team</th><th>Damage</th><th>Healing</th><th>Gold swing</th><th>Deaths</th></tr></thead>
+          <tbody>{(Array.isArray(fight.players) ? fight.players : []).map((stats: Record<string, any>, playerIndex: number) => {
+            const player = match.players.find(p => p.player_slot === Number(stats.player_slot)) || match.players[playerIndex];
+            if (!player) return null;
+            return <tr key={player.player_slot}>
+              <td>{playerName(player)} · {player.hero_name || "Unknown hero"}</td>
+              <td>{radiant(player) ? "Radiant" : "Dire"}</td>
+              <td>{number(Number(stats.damage || 0))}</td>
+              <td>{number(Number(stats.healing || 0))}</td>
+              <td>{number(Number(stats.gold_delta || 0))}</td>
+              <td>{Number(stats.deaths || 0)}</td>
+            </tr>;
+          })}</tbody>
+        </table>
+      </div>)}
+    </section>}
+
     <footer className="pdf-report-footer">Generated by Dota Analytics · Data source: OpenDota · Missing fields are shown as unavailable or zero only where the API returns no value.</footer>
-  </article>;
+  </article></Localize>;
 }
 
 export function AnalysisSection({ match }: { match: MatchData }) {
+  const language = useLanguage();
   const ranked = [...match.players].sort((a, b) => playerScore(b, match.players) - playerScore(a, match.players));
   const top = ranked[0];
   const winnerPlayers = match.players.filter(p => match.radiant_win === null || radiant(p) === match.radiant_win);
@@ -555,10 +603,10 @@ export function AnalysisSection({ match }: { match: MatchData }) {
   const loserDamage = loserPlayers.reduce((s, p) => s + p.hero_damage, 0);
 
   return <div className="analytics-page">
-    <div className="analytics-report-actions">
+    <Localize language={language}><div className="analytics-report-actions">
       <span>Export a detailed match report with player-by-player statistics and event logs.</span>
       <button onClick={() => window.print()}><Printer size={15} /> Export PDF report</button>
-    </div>
+    </div></Localize>
     <MatchPdfReport match={match} ranked={ranked} />
     <Panel title="Match interpretation" subtitle="AUTOMATED STATISTICAL SUMMARY">
       <div className="analytics-insight-grid">
@@ -600,8 +648,9 @@ export function AnalysisSection({ match }: { match: MatchData }) {
 export function PlayerDetail({ player, players, onClose }: {
   player: MatchPlayer; players: MatchPlayer[]; onClose: () => void;
 }) {
+  const language = useLanguage();
   const insight = playerInsight(player, players);
-  return <div className="analytics-player-detail">
+  return <Localize language={language}><div className="analytics-player-detail">
     <div className="analytics-detail-header">
       <div><span>PLAYER PERFORMANCE</span><h2>{playerName(player)}</h2><p>{player.hero_name || "Unknown hero"} · Level {player.level} · {radiant(player) ? "Radiant" : "Dire"}</p></div>
       <button onClick={onClose} aria-label="Close player details">×</button>
@@ -628,5 +677,5 @@ export function PlayerDetail({ player, players, onClose }: {
       <span>Roshan kills: {player.roshan_kills ?? 0}</span>
       <span>Buybacks: {player.buyback_count ?? 0}</span>
     </div>
-  </div>;
+  </div></Localize>;
 }

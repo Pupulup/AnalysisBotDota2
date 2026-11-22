@@ -17,6 +17,8 @@ class OpenDotaClient:
         self.timeout = httpx.Timeout(20.0, connect=10.0)
         self._heroes_cache = None
         self._heroes_cache_time = 0
+        self._items_cache = None
+        self._items_cache_time = 0
 
     async def _request(self, endpoint: str):
         url = f"{self.BASE_URL}/{endpoint}"
@@ -122,3 +124,31 @@ class OpenDotaClient:
         self._heroes_cache_time = time.time()
 
         return heroes
+
+    async def get_items(self) -> dict:
+        cache_valid = (
+            self._items_cache is not None
+            and time.time() - self._items_cache_time < 86400
+        )
+
+        if cache_valid:
+            return self._items_cache
+
+        data = await self._request("constants/items")
+
+        if not isinstance(data, dict):
+            raise OpenDotaError("Некорректный справочник предметов.")
+
+        items = {}
+        for key, item in data.items():
+            item_id = item.get("id")
+            if item_id is None:
+                continue
+            items[int(item_id)] = {
+                "name": item.get("dname") or key.replace("_", " "),
+                "key": key,
+            }
+
+        self._items_cache = items
+        self._items_cache_time = time.time()
+        return items
