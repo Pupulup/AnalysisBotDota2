@@ -129,14 +129,17 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
         # STRATZ remains authoritative for core match/player metrics.
         # OpenDota fills fields not selected from STRATZ and fills STRATZ nulls.
         supplemental_fields = (
-            "teamfight_participation", "stuns", "obs", "sen", "obs_placed",
+            "teamfight_participation", "stuns", "obs_placed",
             "sen_placed", "tower_kills", "roshan_kills", "buyback_count",
-            "times", "gold_t", "xp_t", "lh_t", "kills_log", "ability_upgrades",
+            "times", "gold_t", "xp_t", "lh_t", "purchase_log", "kills_log", "ability_upgrades",
             "lane_role", "is_roaming", "damage_taken", "item_uses", "ability_uses",
             "item_neutral", "camps_stacked", "rune_pickups", "firstblood_claimed",
         )
         for field in supplemental_fields:
-            if player.get(field) is None and fallback_player.get(field) is not None:
+            if field in {"purchase_log", "kills_log", "ability_upgrades", "item_uses", "ability_uses"}:
+                if not player.get(field) and fallback_player.get(field) is not None:
+                    player[field] = fallback_player[field]
+            elif player.get(field) is None and fallback_player.get(field) is not None:
                 player[field] = fallback_player[field]
         players.append(player)
 
