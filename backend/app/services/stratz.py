@@ -157,7 +157,8 @@ query GetMatchPlayback($matchId: Long!) {
     players {
       steamAccountId
       playbackData {
-        deathEvents { time steamAccountId }
+        deathEvents { time steamAccountId positionX positionY }
+        playerUpdatePositionEvents { time x y }
         purchaseEvents { time itemId }
         goldEvents { time amount }
       }
