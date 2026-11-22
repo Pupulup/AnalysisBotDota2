@@ -89,6 +89,9 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
             "tower_damage": raw.get("towerDamage") or 0,
             "hero_healing": raw.get("heroHealing") or 0,
             "level": raw.get("level") or 0,
+            "position": raw.get("position"),
+            "lane": raw.get("lane"),
+            "role": raw.get("role"),
         }
 
         for index in range(6):
@@ -143,6 +146,32 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
                     })
 
         playback = raw.get("_playback") or {}
+        raw_positions = playback.get("playerUpdatePositionEvents") or []
+        sampled_positions = []
+        seen_time_buckets = set()
+        for event in sorted(raw_positions, key=lambda row: int(row.get("time") or 0)):
+            event_time = int(event.get("time") or 0)
+            bucket = event_time // 10
+            x_value = event.get("x")
+            y_value = event.get("y")
+            if bucket in seen_time_buckets or x_value is None or y_value is None:
+                continue
+            seen_time_buckets.add(bucket)
+            sampled_positions.append({"time": event_time, "x": x_value, "y": y_value})
+        raw_deaths = playback.get("deathEvents") or []
+        player["position_events"] = sampled_positions
+        player["death_events"] = [
+            {
+                "time": event.get("time"),
+                "x": event.get("positionX"),
+                "y": event.get("positionY"),
+                "attacker": event.get("attacker"),
+            }
+            for event in raw_deaths
+            if event.get("positionX") is not None and event.get("positionY") is not None
+        ]
+        if sampled_positions or player["death_events"]:
+            has_playback = True
         purchases = playback.get("purchaseEvents") or []
         if purchases:
             has_playback = True
@@ -190,6 +219,7 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
         start_time=start_time,
         game_mode=data.get("gameMode"),
         lobby_type=data.get("lobbyType"),
+        patch_id=fallback_data.get("patch"),
         **mode_info,
         human_players=len(raw_players),
         is_parsed=(
@@ -324,6 +354,7 @@ async def get_match(
             start_time=data.get("start_time"),
             game_mode=data.get("game_mode"),
             lobby_type=data.get("lobby_type"),
+            patch_id=data.get("patch"),
             **mode_info,
             human_players=data.get("human_players"),
             is_parsed=(

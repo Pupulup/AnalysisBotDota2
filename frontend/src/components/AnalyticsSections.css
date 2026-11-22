@@ -135,3 +135,11 @@
 
 .overview-rosters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 @media(max-width:760px){.overview-rosters{grid-template-columns:1fr}}
+
+.pdf-player-insight{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:9px}
+.pdf-player-insight>div{border:1px solid #dbe2eb;background:#f7f9fc;padding:7px 9px;min-width:0}
+.pdf-player-insight h4{font-size:8pt;color:#263b58;margin:0 0 5px}
+.pdf-player-insight ul{margin:0;padding-left:15px}
+.pdf-player-insight li{font-size:7pt;color:#4f6077;margin:3px 0;line-height:1.35}
+@media print{.pdf-player-insight{break-inside:avoid}}
+@media(max-width:640px){.pdf-player-insight{grid-template-columns:1fr}}

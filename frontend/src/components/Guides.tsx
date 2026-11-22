@@ -15,6 +15,9 @@ type GuideData = {
   ally_synergies: Array<{ hero_id: number; games: number; wins: number; win_rate: number | null; edge?: number | null }>;
   matchup_data_available: boolean;
   data_source: string;
+  current_patch?: { id: number; name: string; date?: string | null; source?: string } | null;
+  patch_scope_verified: boolean;
+  patch_scope_note?: string;
 };
 type Lang = "en" | "ru";
 
@@ -134,6 +137,10 @@ export default function Guides({ language }: { language: Lang }) {
     {loadingGuide && <div className="guides-loading"><RefreshCw className="spin"/>{copy(language,"Loading guide data…","Загрузка данных гайда…")}</div>}
 
     {guide && !loadingGuide && <>
+      {!guide.patch_scope_verified && <div className="guide-patch-warning">
+        <strong>{copy(language,"Patch scope not verified","Фильтр патча не подтверждён")}</strong>
+        <span>{copy(language,"Current global patch:", "Текущий глобальный патч:")} <b>{guide.current_patch?.name || copy(language,"unavailable","не определён")}</b>. {copy(language,"STRATZ hero item, ability, talent and matchup aggregates are not yet confirmed as current-patch-only. Treat these statistics as provisional until the schema check is completed.","Агрегаты STRATZ по предметам, способностям, талантам и матчапам пока не подтверждены как относящиеся только к текущему патчу. Считайте эту статистику предварительной до завершения проверки схемы.")}</span>
+      </div>}
       <section className="analytics-panel">
         <div className="analytics-panel-heading"><div><h2>{guide.hero.name}</h2><span>{copy(language,"DATA SOURCES","ИСТОЧНИКИ ДАННЫХ")}: {guide.data_source.toUpperCase()}</span></div></div>
         <div className="guide-build-grid">

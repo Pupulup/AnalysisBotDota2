@@ -55,6 +55,11 @@ export interface MatchPlayer {
   kills_log?: Array<{ time?: number; key?: string }> | null;
   ability_upgrades?: Array<{ time?: number; ability?: string; level?: number }> | null;
   lane_role?: number | null;
+  position?: string | null;
+  lane?: string | null;
+  role?: string | null;
+  position_events?: Array<{ time: number; x: number; y: number }> | null;
+  death_events?: Array<{ time?: number; x: number; y: number; attacker?: string | null }> | null;
   is_roaming?: boolean | null;
   damage_taken?: unknown;
   item_uses?: Record<string, number> | null;
@@ -78,6 +83,7 @@ export interface MatchData {
   start_time: number | null;
   game_mode: number | null;
   lobby_type: number | null;
+  patch_id?: number | null;
   game_mode_name?: string | null;
   lobby_type_name?: string | null;
   mode_category?: "ranked" | "turbo" | "unranked" | "other" | "unknown";
@@ -100,6 +106,7 @@ const duration = (value: number) => {
 };
 export const playerName = (p: MatchPlayer) =>
   p.personaname || p.name || (p.account_id ? `Player ${p.account_id}` : "Anonymous player");
+const positionLabel = (p: MatchPlayer) => p.position?.replace("POSITION_", "Pos ") || p.role || null;
 const kda = (p: MatchPlayer) => (p.kills + p.assists) / Math.max(p.deaths, 1);
 const radiant = (p: MatchPlayer) => p.player_slot < 128;
 
@@ -185,7 +192,7 @@ function PlayerCard({ player, onSelect }: { player: MatchPlayer; onSelect: (p: M
   return <Localize language={language}><button className="analytics-player-row" onClick={() => onSelect(player)}>
     <div className="analytics-player-identity">
       {player.hero_image ? <img src={player.hero_image} alt={player.hero_name || "Hero"} /> : <div className="analytics-hero-fallback">?</div>}
-      <div><strong>{playerName(player)}</strong><span>{player.hero_name || "Unknown hero"} · LVL {player.level}</span></div>
+      <div><strong>{playerName(player)}</strong><span>{player.hero_name || "Unknown hero"} · LVL {player.level}{positionLabel(player) ? ` · ${positionLabel(player)}` : ""}</span></div>
     </div>
     <div className="analytics-player-cell"><strong>{player.kills}/{player.deaths}/{player.assists}</strong><span>K/D/A</span></div>
     <div className="analytics-player-cell"><strong>{player.gold_per_min}</strong><span>GPM</span></div>
@@ -411,12 +418,22 @@ export function playerScore(player: MatchPlayer, allPlayers: MatchPlayer[]) {
   ]);
 
   const survival = percentileScore(player, allPlayers, p => p.deaths, true);
+  const roleWeights: Record<string, { combat: number; utility: number; objectives: number; economy: number; survival: number }> = {
+    POSITION_1: { combat: 0.25, utility: 0.10, objectives: 0.20, economy: 0.25, survival: 0.20 },
+    POSITION_2: { combat: 0.30, utility: 0.10, objectives: 0.20, economy: 0.20, survival: 0.20 },
+    POSITION_3: { combat: 0.30, utility: 0.20, objectives: 0.20, economy: 0.15, survival: 0.15 },
+    POSITION_4: { combat: 0.25, utility: 0.30, objectives: 0.20, economy: 0.10, survival: 0.15 },
+    POSITION_5: { combat: 0.20, utility: 0.35, objectives: 0.20, economy: 0.05, survival: 0.20 },
+  };
+  const weights = roleWeights[player.position || ""] || {
+    combat: 0.30, utility: 0.25, objectives: 0.20, economy: 0.15, survival: 0.10
+  };
   return weightedCategory([
-    { score: combat, weight: 0.30 },
-    { score: utility, weight: 0.25 },
-    { score: objectives, weight: 0.20 },
-    { score: economy, weight: 0.15 },
-    { score: survival, weight: 0.10 }
+    { score: combat, weight: weights.combat },
+    { score: utility, weight: weights.utility },
+    { score: objectives, weight: weights.objectives },
+    { score: economy, weight: weights.economy },
+    { score: survival, weight: weights.survival }
   ]) ?? 0;
 }
 
@@ -525,6 +542,7 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
         <div><span>DIRE</span><strong>{match.dire_score}</strong></div>
       </div>
       <p className="pdf-report-coverage">{match.is_parsed ? "Parsed match data" : "Partial match data"} · {match.players.length} player records · {match.objectives?.length || 0} objective events · {match.teamfights?.length || 0} teamfights</p>
+      <p className="pdf-report-coverage">Game mode: {match.game_mode_name || `ID ${match.game_mode ?? "Unknown"}`} · Lobby: {match.lobby_type_name || `ID ${match.lobby_type ?? "Unknown"}`} · Patch ID: {match.patch_id ?? "Unknown"}</p>
     </header>
 
     <section className="pdf-report-section">
@@ -545,23 +563,23 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
     <section className="pdf-report-section">
       <h2>Player contribution ranking</h2>
       <table className="pdf-report-table">
-        <thead><tr><th>#</th><th>Player / Hero</th><th>Team</th><th>K / D / A</th><th>KDA</th><th>GPM</th><th>XPM</th><th>Net worth</th><th>Hero dmg</th><th>Tower dmg</th><th>Wards</th><th>Stacks</th><th>Stuns</th><th>Score</th></tr></thead>
+        <thead><tr><th>#</th><th>Player / Hero</th><th>Team</th><th>Position</th><th>K / D / A</th><th>KDA</th><th>GPM</th><th>XPM</th><th>Net worth</th><th>Hero dmg</th><th>Tower dmg</th><th>Wards</th><th>Stacks</th><th>Stuns</th><th>Score</th></tr></thead>
         <tbody>{ranked.map((p, index) => <tr key={p.player_slot}>
           <td>{index + 1}</td><td>{playerName(p)}<small>{p.hero_name || "Unknown hero"}</small></td>
-          <td>{radiant(p) ? "Radiant" : "Dire"}</td><td>{p.kills}/{p.deaths}/{p.assists}</td>
+          <td>{radiant(p) ? "Radiant" : "Dire"}</td><td>{positionLabel(p) || "—"}</td><td>{p.kills}/{p.deaths}/{p.assists}</td>
           <td>{kda(p).toFixed(2)}</td><td>{p.gold_per_min}</td><td>{p.xp_per_min}</td>
           <td>{number(p.net_worth)}</td><td>{number(p.hero_damage)}</td><td>{number(p.tower_damage)}</td>
           <td>{(p.obs_placed || 0) + (p.sen_placed || 0)}</td><td>{p.camps_stacked ?? "—"}</td><td>{p.stuns ?? "—"}</td><td>{playerScore(p, match.players).toFixed(0)}</td>
         </tr>)}</tbody>
       </table>
-      <p className="pdf-report-note">Performance score uses within-match percentile ranks across combat, utility, objectives, economy and survival. It is a heuristic, not an official Dota 2 rating.</p>
+      <p className="pdf-report-note">Performance score uses within-match percentiles and role-adjusted category weights when STRATZ provides a position. Missing position data uses neutral weights. It is a heuristic, not an official Dota 2 rating.</p>
     </section>
 
     <section className="pdf-report-section">
       <h2>Individual player breakdown</h2>
       {ranked.map((p, index) => <article className="pdf-player-block" key={p.player_slot}>
         <div className="pdf-player-heading">
-          <div><span>#{index + 1} · {radiant(p) ? "RADIANT" : "DIRE"}</span><h3>{playerName(p)}</h3><p>{p.hero_name || "Unknown hero"} · Level {p.level}</p></div>
+          <div><span>#{index + 1} · {radiant(p) ? "RADIANT" : "DIRE"}</span><h3>{playerName(p)}</h3><p>{p.hero_name || "Unknown hero"} · Level {p.level}{positionLabel(p) ? ` · ${positionLabel(p)}` : ""}</p></div>
           <strong>{playerScore(p, match.players).toFixed(0)} / 100</strong>
         </div>
         <div className="pdf-report-metrics">
@@ -585,6 +603,11 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
         </div>
 
         <PlayerProgression player={p} />
+
+        <div className="pdf-player-insight">
+          <div><h4>Strengths</h4><ul>{playerInsight(p, match.players).positives.map((item, i) => <li key={i}>{item}</li>)}</ul></div>
+          <div><h4>Review points</h4><ul>{playerInsight(p, match.players).concerns.map((item, i) => <li key={i}>{item}</li>)}</ul></div>
+        </div>
 
         <div className="pdf-player-logs">
           <div><h4>Item purchase log</h4>
@@ -619,6 +642,20 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
           <td>{reportTime(Math.max(0, Number(fight.end || 0) - Number(fight.start || 0)))}</td><td>{Number(fight.deaths || 0)}</td></tr>)}
       </tbody></table> : <p className="pdf-report-note">No teamfight details available.</p>}
     </section>
+
+    {match.players.some(player => (player.position_events?.length || 0) > 0 || (player.death_events?.length || 0) > 0) && <section className="pdf-report-section">
+      <h2>Player movement coverage</h2>
+      <p className="pdf-report-note">STRATZ playback coordinates are sampled at 10-second intervals. This table reports data coverage; it does not infer movement intent or prove positioning errors.</p>
+      <table className="pdf-report-table">
+        <thead><tr><th>Player</th><th>Position samples</th><th>Death locations</th><th>Position</th></tr></thead>
+        <tbody>{match.players.map(player => <tr key={player.player_slot}>
+          <td>{playerName(player)} · {player.hero_name || "Unknown hero"}</td>
+          <td>{player.position_events?.length || 0}</td>
+          <td>{player.death_events?.length || 0}</td>
+          <td>{player.position?.replace("POSITION_", "Pos ") || player.role || "—"}</td>
+        </tr>)}</tbody>
+      </table>
+    </section>}
 
     {fightReports.length > 0 && <section className="pdf-report-section">
       <h2>Teamfight contribution</h2>
@@ -667,7 +704,7 @@ export function AnalysisSection({ match }: { match: MatchData }) {
         <div><Swords size={20} /><span>Combat damage</span><strong>{number(winnerDamage || loserDamage)}</strong><small>{match.radiant_win === null ? "Team result is unknown" : "Hero damage by winning team"}</small></div>
         <div><Users size={20} /><span>Match data</span><strong>{match.players.length} players</strong><small>{match.is_parsed ? "Parsed player statistics" : "Partial match data"}</small></div>
       </div>
-      <p className="analytics-method-note">Performance score is a role-neutral heuristic using within-match percentile ranks for combat, wards and utility, objectives, economy and survival. GPM and last hits have limited weight; missing categories are excluded and remaining weights are renormalized. It is not an official or causal rating.</p>
+      <p className="analytics-method-note">Performance score uses within-match percentiles with position-adjusted category weights when STRATZ provides a position. If position data is unavailable, neutral weights are used. It is a heuristic, not an official or causal rating.</p>
     </Panel>
     <Panel title="Individual player contribution" subtitle="COMBAT · ECONOMY · OBJECTIVES · SUPPORT">
       <div className="analytics-contribution-table">
@@ -705,7 +742,7 @@ export function PlayerDetail({ player, players, onClose }: {
   const insight = playerInsight(player, players);
   return <Localize language={language}><div className="analytics-player-detail">
     <div className="analytics-detail-header">
-      <div><span>PLAYER PERFORMANCE</span><h2>{playerName(player)}</h2><p>{player.hero_name || "Unknown hero"} · Level {player.level} · {radiant(player) ? "Radiant" : "Dire"}</p></div>
+      <div><span>PLAYER PERFORMANCE</span><h2>{playerName(player)}</h2><p>{player.hero_name || "Unknown hero"} · Level {player.level} · {positionLabel(player) || "Position unavailable"} · {radiant(player) ? "Radiant" : "Dire"}</p></div>
       <button onClick={onClose} aria-label="Close player details">×</button>
     </div>
     <div className="analytics-detail-grid">

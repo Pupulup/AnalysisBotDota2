@@ -15,12 +15,14 @@ class OpenDotaClient:
 
     def __init__(self):
         self.timeout = httpx.Timeout(20.0, connect=10.0)
+        self._patches_cache = None
+        self._patches_cache_time = 0
         self._heroes_cache = None
         self._heroes_cache_time = 0
         self._items_cache = None
         self._items_cache_time = 0
 
-    async def _request(self, endpoint: str, method: str = "GET"):
+    async def _request(self, endpoint: str, method: str = "GET", params: dict | None = None):
         url = f"{self.BASE_URL}/{endpoint}"
 
         try:
@@ -30,7 +32,7 @@ class OpenDotaClient:
                 if method == "POST":
                     response = await client.post(url)
                 else:
-                    response = await client.get(url)
+                    response = await client.get(url, params=params)
 
             if response.status_code == 404:
                 raise OpenDotaError("Данные не найдены.", 404)
@@ -110,6 +112,97 @@ class OpenDotaClient:
             raise OpenDotaError("Некорректный формат матча.")
 
         return data
+
+
+    async def get_current_patch(self) -> dict:
+        cache_valid = (
+            self._patches_cache is not None
+            and time.time() - self._patches_cache_time < 3600
+        )
+        if cache_valid:
+            patches = self._patches_cache
+        else:
+            patches = await self._request("constants/patch")
+            if not isinstance(patches, dict) or not patches:
+                raise OpenDotaError("Не удалось определить актуальный глобальный патч.")
+            self._patches_cache = patches
+            self._patches_cache_time = time.time()
+
+        dated_patches = []
+        for patch_id, patch in patches.items():
+            if not isinstance(patch, dict) or not patch.get("date"):
+                continue
+            try:
+                patch_date = time.strptime(str(patch["date"]), "%Y-%m-%d")
+                dated_patches.append((patch_date, patch_id, patch))
+            except (TypeError, ValueError):
+                continue
+
+        if not dated_patches:
+            raise OpenDotaError("OpenDota не вернула даты глобальных патчей.")
+        _, patch_id, patch = max(dated_patches, key=lambda entry: entry[0])
+        return {
+            "id": int(patch_id),
+            "name": patch.get("name") or f"Patch #{patch_id}",
+            "date": patch.get("date"),
+        }
+
+    async def get_player_profile(self, account_id: int) -> dict:
+        data = await self._request(f"players/{account_id}")
+        if not isinstance(data, dict):
+            raise OpenDotaError("Некорректный профиль игрока OpenDota.")
+        profile = data.get("profile")
+        if not isinstance(profile, dict):
+            raise OpenDotaError(
+                "Профиль не найден или скрыт. Проверьте Steam32 ID и публичность профиля OpenDota.",
+                404,
+            )
+        return data
+
+    async def get_player_matches(
+        self,
+        account_id: int,
+        patch_id: int,
+        mode_category: str,
+        limit: int = 50,
+    ) -> list[dict]:
+        from app.services.game_modes import describe_game_mode
+
+        collected: list[dict] = []
+        offset = 0
+        page_size = 100
+        max_pages = 10
+
+        for _ in range(max_pages):
+            page = await self._request(
+                f"players/{account_id}/matches",
+                params={
+                    "patch": patch_id,
+                    "limit": page_size,
+                    "offset": offset,
+                    "significant": 0,
+                },
+            )
+            if not isinstance(page, list):
+                raise OpenDotaError("Некорректная история матчей OpenDota.")
+            if not page:
+                break
+
+            for match in page:
+                category = describe_game_mode(
+                    match.get("game_mode"),
+                    match.get("lobby_type"),
+                )["mode_category"]
+                if category == mode_category:
+                    collected.append(match)
+                    if len(collected) >= limit:
+                        break
+
+            if len(collected) >= limit or len(page) < page_size:
+                break
+            offset += page_size
+
+        return collected[:limit]
 
     async def get_heroes(self) -> dict:
         cache_valid = (

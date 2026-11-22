@@ -27,3 +27,7 @@
 .guides-loading{display:flex;align-items:center;gap:10px;padding:18px;color:#8fa5c2;font-size:11px}
 @media(max-width:750px){.guide-draft-grid,.guide-build-grid,.guide-ability-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.guide-picks-group{grid-template-columns:1fr}.guide-picks-group h3{grid-column:1}.guide-item-row{grid-template-columns:30px minmax(0,1fr) auto}.guide-item-row img,.guide-item-placeholder{width:28px;height:28px}}
+
+.guide-patch-warning{display:flex;flex-direction:column;gap:6px;padding:13px 16px;border:1px solid #70552f;border-left:3px solid #d2a04d;border-radius:8px;background:#2a241b;color:#c8b58f;font-size:10px;line-height:1.55}
+.guide-patch-warning strong{color:#f0c777;font-size:11px}
+.guide-patch-warning b{color:#f3dfb7}

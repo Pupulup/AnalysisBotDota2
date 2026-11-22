@@ -45,6 +45,11 @@ class MatchPlayer(BaseModel):
     kills_log: list[dict[str, Any]] | None = None
     ability_upgrades: list[dict[str, Any]] | None = None
     lane_role: int | None = None
+    position: str | None = None
+    lane: str | None = None
+    role: str | None = None
+    position_events: list[dict[str, Any]] | None = None
+    death_events: list[dict[str, Any]] | None = None
     is_roaming: bool | None = None
     damage_taken: Any | None = None
     item_uses: dict[str, int] | None = None
@@ -68,6 +73,7 @@ class MatchResponse(BaseModel):
     start_time: int | None = None
     game_mode: int | None = None
     lobby_type: int | None = None
+    patch_id: int | None = None
     game_mode_name: str | None = None
     lobby_type_name: str | None = None
     mode_category: str = "unknown"
