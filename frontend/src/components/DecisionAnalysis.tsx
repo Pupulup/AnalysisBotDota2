@@ -82,11 +82,6 @@ function DecisionAnalysis({ match, language }: Props) {
     kind: String(event.type || "objective")
   })).sort((a, b) => a.time - b.time);
 
-  const criticalFights = [...fightRows]
-    .filter(fight => fight.radiantDeaths + fight.direDeaths > 0)
-    .sort((a, b) => (b.radiantDeaths + b.direDeaths) - (a.radiantDeaths + a.direDeaths))
-    .slice(0, 5);
-
   const playerRows = players.map(player => {
     const fightStats = fights.flatMap((fight: Record<string, any>) =>
       (Array.isArray(fight.players) ? fight.players : [])
@@ -101,19 +96,13 @@ function DecisionAnalysis({ match, language }: Props) {
   }).sort((a, b) => b.fightDeaths - a.fightDeaths);
 
   const allPurchaseCount = players.reduce((sum, player) => sum + (Array.isArray(player.purchase_log) ? player.purchase_log.length : 0), 0);
-  const purchaseRows = players.flatMap(player =>
-    (Array.isArray(player.purchase_log) ? player.purchase_log : [])
-      .filter((item: Record<string, any>) => Number(item.time) >= 0 && Number(item.time) <= match.duration)
-      .map((item: Record<string, any>) => ({ player, item, time: Number(item.time) || 0 }))
-  ).sort((a, b) => a.time - b.time).slice(0, 18);
-
   const hasAnyData = fights.length > 0 || objectives.length > 0 || players.some(player => (player.purchase_log || []).length > 0);
 
   return <div className="analytics-page decision-analysis">
     <Panel title={copy(language, "Match decision analysis", "Анализ ключевых решений")} subtitle={copy(language, "FIGHT SWINGS · OBJECTIVES · PLAYER RISK · ITEM TIMING", "ПЕРЕЛОМЫ В СРАЖЕНИЯХ · ОБЪЕКТЫ · РИСК ИГРОКОВ · ТАЙМИНГИ ПРЕДМЕТОВ")}>
       <div className="decision-intro">{copy(language,
-        "This report highlights events that deserve review: costly fights, deaths shortly before objectives, player death patterns and purchase timing. It uses only data returned by OpenDota.",
-        "Отчёт выделяет эпизоды для разбора: дорогие командные сражения, смерти перед важными объектами, индивидуальные паттерны смертей и время покупок. Используются только данные, полученные от OpenDota."
+        "This report highlights events that deserve review: costly fights, deaths shortly before objectives, player death patterns and purchase timing. It combines STRATZ playback with supplemental OpenDota match data.",
+        "Отчёт выделяет эпизоды для разбора: дорогие командные сражения, смерти перед важными объектами, индивидуальные паттерны смертей и время покупок. Объединяются события STRATZ playback и дополнительные данные OpenDota."
       )}</div>
       {!hasAnyData && <div className="analytics-empty">{copy(language, "OpenDota did not return enough parsed event data for decision analysis.", "OpenDota не вернула достаточно обработанных событий для анализа решений.")}</div>}
       <div className="decision-kpis">
@@ -122,24 +111,6 @@ function DecisionAnalysis({ match, language }: Props) {
         <div><span>{copy(language, "Fight deaths", "Смерти в сражениях")}</span><strong>{fmt(fightRows.reduce((sum, fight) => sum + fight.radiantDeaths + fight.direDeaths, 0))}</strong></div>
         <div><span>{copy(language, "Purchase events", "Покупки")}</span><strong>{fmt(allPurchaseCount)}</strong></div>
       </div>
-    </Panel>
-
-    <Panel title={copy(language, "High-impact teamfights", "Сражения с наибольшими потерями")} subtitle={copy(language, "RANKED BY RECORDED DEATHS", "СОРТИРОВКА ПО ЧИСЛУ ЗАФИКСИРОВАННЫХ СМЕРТЕЙ")}>
-      {!criticalFights.length ? <div className="analytics-empty">{copy(language, "No parsed teamfight breakdown is available.", "Нет обработанных данных о командных сражениях.")}</div> :
-        <div className="decision-list">{criticalFights.map(fight => {
-          const worstTeam = fight.radiantDeaths > fight.direDeaths ? "Radiant" : fight.direDeaths > fight.radiantDeaths ? "Dire" : null;
-          const objective = fight.nearbyObjective?.event;
-          return <article className="decision-event" key={fight.index}>
-            <div className="decision-event-top"><strong>{copy(language, "Fight", "Сражение")} #{fight.index + 1}</strong><span>{clock(fight.start)}–{clock(fight.end)}</span><b>{fight.radiantDeaths + fight.direDeaths} {copy(language, "deaths", "смертей")}</b></div>
-            <div className="decision-event-metrics">
-              <span>{teamName(true, language)}: <b>{fight.radiantDeaths} {copy(language, "deaths", "смертей")}</b></span>
-              <span>{teamName(false, language)}: <b>{fight.direDeaths} {copy(language, "deaths", "смертей")}</b></span>
-              <span>{copy(language, "Gold swing (R−D)", "Разница золота (С−Т)")}: <b>{fight.swing > 0 ? "+" : ""}{fmt(fight.swing)}</b></span>
-              {fight.advantageChange != null && <span>{copy(language, "Radiant lead change", "Изменение преимущества Света")}: <b>{fight.advantageChange > 0 ? "+" : ""}{fmt(fight.advantageChange)}</b></span>}
-            </div>
-            {worstTeam && <p>{copy(language, "More deaths recorded for", "Больше смертей зафиксировано у команды")} <strong>{teamName(worstTeam === "Radiant", language)}</strong>. {objective ? copy(language, "An objective followed within three minutes:", "В течение трёх минут после сражения был взят объект:") + " " + eventTitle(objective, language) : copy(language, "Review the positioning and objective state around this timestamp.", "Стоит проверить позиционирование и состояние объектов в этот момент матча.")}</p>}
-          </article>;
-        })}</div>}
     </Panel>
 
     <Panel title={copy(language, "Deaths before objectives", "Смерти перед важными объектами")} subtitle={copy(language, "TEAMFIGHTS ENDING WITHIN 3 MINUTES BEFORE AN OBJECTIVE", "СРАЖЕНИЯ, ЗАВЕРШИВШИЕСЯ НЕ БОЛЕЕ ЧЕМ ЗА 3 МИНУТЫ ДО ОБЪЕКТА")}>
@@ -168,16 +139,9 @@ function DecisionAnalysis({ match, language }: Props) {
       )}</p>
     </Panel>
 
-    <Panel title={copy(language, "Purchase timeline", "Хронология покупок")} subtitle={copy(language, "EARLIEST 18 PURCHASE EVENTS RETURNED BY OPENDOTA", "ПЕРВЫЕ 18 СОБЫТИЙ ПОКУПОК, ВЕРНУТЫХ OPENDOTA")}>
-      {!purchaseRows.length ? <div className="analytics-empty">{copy(language, "Purchase logs are unavailable for this match.", "Журнал покупок для этого матча недоступен.")}</div> :
-        <div className="decision-purchases">{purchaseRows.map((row, index) => <div className="decision-purchase-row" key={index}>
-          <time>{clock(row.time)}</time><strong>{playerName(row.player)}</strong><span>{String(row.item.key || copy(language, "Unknown item", "Неизвестный предмет")).replace(/_/g, " ")}</span>
-        </div>)}</div>}
-    </Panel>
-
     <p className="decision-method">{copy(language,
-      "Interpretation limits: OpenDota event logs may be incomplete or absent. Gold swing is computed from per-player gold_delta in parsed fights; the advantage curve is sampled at minute resolution. Temporal proximity does not establish that a fight caused an objective outcome.",
-      "Ограничения: журналы OpenDota могут быть неполными или отсутствовать. Разница золота рассчитывается по gold_delta игроков в обработанных сражениях; кривая преимущества берётся с минутной точностью. Близость событий по времени не доказывает, что сражение стало причиной результата борьбы за объект."
+      "Interpretation limits: STRATZ and OpenDota event logs may be incomplete or absent. Gold swing is computed from per-player gold_delta in parsed fights; the advantage curve is sampled at minute resolution. Temporal proximity does not establish that a fight caused an objective outcome.",
+      "Ограничения: журналы STRATZ и OpenDota могут быть неполными или отсутствовать. Разница золота рассчитывается по gold_delta игроков в обработанных сражениях; кривая преимущества берётся с минутной точностью. Близость событий по времени не доказывает, что сражение стало причиной результата борьбы за объект."
     )}</p>
   </div>;
 }

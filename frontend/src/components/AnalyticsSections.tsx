@@ -44,11 +44,14 @@ export interface MatchPlayer {
   tower_kills?: number | null;
   roshan_kills?: number | null;
   buyback_count?: number | null;
+  camps_stacked?: number | null;
+  rune_pickups?: number | null;
+  firstblood_claimed?: number | null;
   times?: number[] | null;
   gold_t?: number[] | null;
   xp_t?: number[] | null;
   lh_t?: number[] | null;
-  purchase_log?: Array<{ time?: number; key?: string }> | null;
+  purchase_log?: Array<{ time?: number; key?: string; item_id?: number }> | null;
   kills_log?: Array<{ time?: number; key?: string }> | null;
   ability_upgrades?: Array<{ time?: number; ability?: string; level?: number }> | null;
   lane_role?: number | null;
@@ -63,7 +66,7 @@ export interface MatchPlayer {
   item_4?: number | null;
   item_5?: number | null;
   item_neutral?: number | null;
-  item_inventory?: Array<{ id: number; name: string; slot: string }> | null;
+  item_inventory?: Array<{ id: number; name: string; key?: string | null; slot: string }> | null;
 }
 
 export interface MatchData {
@@ -119,7 +122,7 @@ function Panel({ title, subtitle, children }: {
   </section>;
 }
 
-export function OverviewSection({ match }: { match: MatchData }) {
+export function OverviewSection({ match, onSelect }: { match: MatchData; onSelect: (player: MatchPlayer) => void }) {
   const players = match.players || [];
   const totalDamage = players.reduce((sum, p) => sum + p.hero_damage, 0);
   const totalNetWorth = players.reduce((sum, p) => sum + p.net_worth, 0);
@@ -163,6 +166,14 @@ export function OverviewSection({ match }: { match: MatchData }) {
         <div className="analytics-mvp-score"><strong>{playerScore(mvp, players).toFixed(0)}</strong><span>PERFORMANCE</span></div>
       </div>
     </Panel>}
+    <div className="overview-rosters">
+      <Panel title="Radiant roster" subtitle="PLAYER CONTRIBUTION · SELECT A PLAYER FOR DETAILS">
+        <div className="analytics-player-table">{players.filter(radiant).map(player => <PlayerCard key={player.player_slot} player={player} onSelect={onSelect} />)}</div>
+      </Panel>
+      <Panel title="Dire roster" subtitle="PLAYER CONTRIBUTION · SELECT A PLAYER FOR DETAILS">
+        <div className="analytics-player-table">{players.filter(player => !radiant(player)).map(player => <PlayerCard key={player.player_slot} player={player} onSelect={onSelect} />)}</div>
+      </Panel>
+    </div>
   </div>;
 }
 
@@ -223,30 +234,17 @@ function eventLabel(event: Record<string, any>) {
 
 export function TimelineSection({ match }: { match: MatchData }) {
   const language = useLanguage();
-  const gold = match.radiant_gold_adv || [];
   const xp = match.radiant_xp_adv || [];
   const events = [...(match.objectives || [])].sort((a, b) => (a.time || 0) - (b.time || 0));
-  const hasTimeline = gold.length > 0 || xp.length > 0;
+  const hasTimeline = xp.length > 0;
 
   return <div className="analytics-page">
     {hasTimeline ? <>
-      {gold.length > 0 && <Panel title="Gold advantage" subtitle="RADIANT POSITIVE · DIRE NEGATIVE">
-        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_gold_adv", language)} style={{ height: 300, width: "100%" }} /></div>
-      </Panel>}
       {xp.length > 0 && <Panel title="Experience advantage" subtitle="RADIANT POSITIVE · DIRE NEGATIVE">
         <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_xp_adv", language)} style={{ height: 300, width: "100%" }} /></div>
       </Panel>}
     </> : <Panel title="Timeline unavailable" subtitle="OPEN DOTA HAS NOT PROVIDED ADVANTAGE SERIES">
       <div className="analytics-empty">This match does not contain parsed gold or experience timeline data. The match overview and player statistics are still available.</div>
-    </Panel>}
-    {(match.teamfights || []).length > 0 && <Panel title="Teamfight summary" subtitle={`${(match.teamfights || []).length} DETECTED TEAMFIGHTS`}>
-      <div className="analytics-events">
-        {(match.teamfights || []).map((fight, index) => <div className="analytics-event" key={index}>
-          <span className="analytics-event-time">{duration(Math.max(0, Number(fight.start) || 0))}</span>
-          <span className="analytics-event-marker"><Swords size={14} /></span>
-          <div><strong>Teamfight {index + 1}</strong><small>{Number(fight.deaths || 0)} DEATHS · {duration(Math.max(0, (Number(fight.end) || 0) - (Number(fight.start) || 0)))} DURATION</small></div>
-        </div>)}
-      </div>
     </Panel>}
     <Panel title="Match objectives" subtitle={`${events.length} RECORDED EVENTS`}>
       {events.length ? <div className="analytics-events">
@@ -361,18 +359,62 @@ export function TeamsSection({ match }: { match: MatchData }) {
   </div>;
 }
 
+function percentileScore(player: MatchPlayer, allPlayers: MatchPlayer[], selector: (p: MatchPlayer) => number, inverse = false): number | null {
+  const values = allPlayers.map(selector).filter(value => Number.isFinite(value));
+  if (!values.length || values.every(value => value === 0)) return null;
+  const target = selector(player);
+  const comparable = inverse ? values.map(value => -value) : values;
+  const scoreValue = inverse ? -target : target;
+  const below = comparable.filter(value => value < scoreValue).length;
+  const equal = comparable.filter(value => value === scoreValue).length;
+  return 100 * (below + equal * 0.5) / comparable.length;
+}
+
+function weightedCategory(entries: Array<{ score: number | null; weight: number }>): number | null {
+  const available = entries.filter(entry => entry.score !== null);
+  if (!available.length) return null;
+  const weight = available.reduce((sum, entry) => sum + entry.weight, 0);
+  return available.reduce((sum, entry) => sum + (entry.score || 0) * entry.weight, 0) / weight;
+}
+
 export function playerScore(player: MatchPlayer, allPlayers: MatchPlayer[]) {
-  const max = (selector: (p: MatchPlayer) => number) => Math.max(...allPlayers.map(selector), 1);
-  const normalized = (value: number, maximum: number) => Math.min(value / Math.max(maximum, 1), 1);
-  const participation = player.teamfight_participation != null
-    ? Math.max(0, Math.min(player.teamfight_participation, 1))
-    : normalized(player.kills + player.assists, max(p => p.kills + p.assists));
-  const kdaScore = Math.min(kda(player) / 8, 1);
-  const gpmScore = normalized(player.gold_per_min, max(p => p.gold_per_min));
-  const damageScore = normalized(player.hero_damage, max(p => p.hero_damage));
-  const objectiveScore = normalized(player.tower_damage, max(p => p.tower_damage));
-  const healingScore = normalized(player.hero_healing, max(p => p.hero_healing));
-  return 100 * (kdaScore * 0.20 + gpmScore * 0.20 + damageScore * 0.25 + objectiveScore * 0.15 + participation * 0.15 + healingScore * 0.05);
+  const killParticipation = percentileScore(player, allPlayers, p => p.kills + p.assists);
+  const damage = percentileScore(player, allPlayers, p => p.hero_damage);
+  const teamfight = percentileScore(player, allPlayers, p => p.teamfight_participation ?? 0);
+  const combat = weightedCategory([
+    { score: killParticipation, weight: 0.4 },
+    { score: damage, weight: 0.3 },
+    { score: teamfight, weight: 0.3 }
+  ]);
+
+  const utility = weightedCategory([
+    { score: percentileScore(player, allPlayers, p => (p.obs_placed || 0) + (p.sen_placed || 0)), weight: 0.3 },
+    { score: percentileScore(player, allPlayers, p => p.hero_healing), weight: 0.25 },
+    { score: percentileScore(player, allPlayers, p => p.stuns || 0), weight: 0.2 },
+    { score: percentileScore(player, allPlayers, p => p.camps_stacked || 0), weight: 0.15 },
+    { score: percentileScore(player, allPlayers, p => p.rune_pickups || 0), weight: 0.1 }
+  ]);
+
+  const objectives = weightedCategory([
+    { score: percentileScore(player, allPlayers, p => p.tower_damage), weight: 0.6 },
+    { score: percentileScore(player, allPlayers, p => p.tower_kills || 0), weight: 0.2 },
+    { score: percentileScore(player, allPlayers, p => p.roshan_kills || 0), weight: 0.2 }
+  ]);
+
+  const economy = weightedCategory([
+    { score: percentileScore(player, allPlayers, p => p.gold_per_min), weight: 0.45 },
+    { score: percentileScore(player, allPlayers, p => p.xp_per_min), weight: 0.3 },
+    { score: percentileScore(player, allPlayers, p => p.last_hits), weight: 0.25 }
+  ]);
+
+  const survival = percentileScore(player, allPlayers, p => p.deaths, true);
+  return weightedCategory([
+    { score: combat, weight: 0.30 },
+    { score: utility, weight: 0.25 },
+    { score: objectives, weight: 0.20 },
+    { score: economy, weight: 0.15 },
+    { score: survival, weight: 0.10 }
+  ]) ?? 0;
 }
 
 function playerInsight(player: MatchPlayer, allPlayers: MatchPlayer[]) {
@@ -387,6 +429,9 @@ function playerInsight(player: MatchPlayer, allPlayers: MatchPlayer[]) {
   if (player.kills + player.assists >= 10) positives.push("High kill participation through kills and assists.");
   if (player.hero_damage >= allPlayers.reduce((m, p) => Math.max(m, p.hero_damage), 0) * 0.85) positives.push("One of the match leaders in hero damage.");
   if (player.tower_damage > 1500) positives.push("Meaningful contribution to structural damage.");
+  if ((player.obs_placed || 0) + (player.sen_placed || 0) >= 8) positives.push("Strong vision contribution through observer and sentry wards.");
+  if (player.hero_healing > 1000) positives.push("Meaningful healing contribution.");
+  if ((player.camps_stacked || 0) >= 3) positives.push("Useful jungle support through stacked camps.");
   if (player.net_worth >= allPlayers.reduce((m, p) => Math.max(m, p.net_worth), 0) * 0.85) positives.push("Among the strongest players by net worth.");
   if (player.deaths >= 10) concerns.push("High death count; review positioning and fight selection.");
   if (player.tower_damage < 300 && player.kills + player.assists > 8) concerns.push("Low building damage relative to combat involvement.");
@@ -497,16 +542,16 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
     <section className="pdf-report-section">
       <h2>Player contribution ranking</h2>
       <table className="pdf-report-table">
-        <thead><tr><th>#</th><th>Player / Hero</th><th>Team</th><th>K / D / A</th><th>KDA</th><th>GPM</th><th>XPM</th><th>Net worth</th><th>Hero dmg</th><th>Tower dmg</th><th>Score</th></tr></thead>
+        <thead><tr><th>#</th><th>Player / Hero</th><th>Team</th><th>K / D / A</th><th>KDA</th><th>GPM</th><th>XPM</th><th>Net worth</th><th>Hero dmg</th><th>Tower dmg</th><th>Wards</th><th>Stacks</th><th>Stuns</th><th>Score</th></tr></thead>
         <tbody>{ranked.map((p, index) => <tr key={p.player_slot}>
           <td>{index + 1}</td><td>{playerName(p)}<small>{p.hero_name || "Unknown hero"}</small></td>
           <td>{radiant(p) ? "Radiant" : "Dire"}</td><td>{p.kills}/{p.deaths}/{p.assists}</td>
           <td>{kda(p).toFixed(2)}</td><td>{p.gold_per_min}</td><td>{p.xp_per_min}</td>
           <td>{number(p.net_worth)}</td><td>{number(p.hero_damage)}</td><td>{number(p.tower_damage)}</td>
-          <td>{playerScore(p, match.players).toFixed(0)}</td>
+          <td>{(p.obs_placed || 0) + (p.sen_placed || 0)}</td><td>{p.camps_stacked ?? "—"}</td><td>{p.stuns ?? "—"}</td><td>{playerScore(p, match.players).toFixed(0)}</td>
         </tr>)}</tbody>
       </table>
-      <p className="pdf-report-note">Performance score is a heuristic, relative to the players in this match. It is not an official Dota 2 rating.</p>
+      <p className="pdf-report-note">Performance score uses within-match percentile ranks across combat, utility, objectives, economy and survival. It is a heuristic, not an official Dota 2 rating.</p>
     </section>
 
     <section className="pdf-report-section">
@@ -524,10 +569,12 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
           <ReportMetric label="Total gold / XP" value={`${optionalNumber(p.total_gold)} / ${optionalNumber(p.total_xp)}`} />
           <ReportMetric label="Last hits / denies" value={`${p.last_hits} / ${p.denies}`} />
           <ReportMetric label="Hero damage" value={number(p.hero_damage)} />
+          <ReportMetric label="Observer / sentry wards" value={(p.obs_placed || 0) + (p.sen_placed || 0)} />
+          <ReportMetric label="Camps stacked" value={optionalNumber(p.camps_stacked)} />
+          <ReportMetric label="Stuns" value={optionalNumber(p.stuns)} />
           <ReportMetric label="Tower damage" value={number(p.tower_damage)} />
           <ReportMetric label="Healing" value={number(p.hero_healing)} />
           <ReportMetric label="Teamfight participation" value={p.teamfight_participation == null ? "—" : `${(p.teamfight_participation * 100).toFixed(1)}%`} />
-          <ReportMetric label="Stuns" value={p.stuns == null ? "—" : Number(p.stuns).toFixed(1)} />
           <ReportMetric label="Wards O / S" value={`${optionalNumber(p.obs_placed)} / ${optionalNumber(p.sen_placed)}`} />
           <ReportMetric label="Tower / Roshan kills" value={`${optionalNumber(p.tower_kills)} / ${optionalNumber(p.roshan_kills)}`} />
           <ReportMetric label="Buybacks" value={optionalNumber(p.buyback_count)} />
@@ -592,7 +639,7 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
       </div>)}
     </section>}
 
-    <footer className="pdf-report-footer">Generated by Dota Analytics · Data source: OpenDota · Missing fields are shown as unavailable or zero only where the API returns no value.</footer>
+    <footer className="pdf-report-footer">Generated by Dota Analytics · Data sources: STRATZ and OpenDota · Missing fields are shown as unavailable or zero only where the API returns no value.</footer>
   </article></Localize>;
 }
 
@@ -617,14 +664,14 @@ export function AnalysisSection({ match }: { match: MatchData }) {
         <div><Swords size={20} /><span>Combat damage</span><strong>{number(winnerDamage || loserDamage)}</strong><small>{match.radiant_win === null ? "Team result is unknown" : "Hero damage by winning team"}</small></div>
         <div><Users size={20} /><span>Match data</span><strong>{match.players.length} players</strong><small>{match.is_parsed ? "Parsed player statistics" : "Partial match data"}</small></div>
       </div>
-      <p className="analytics-method-note">Performance score is a heuristic indicator calculated from KDA, GPM, hero damage, tower damage, teamfight participation (when supplied) and healing. It is not an official Dota 2 rating and should not be interpreted as a causal measure of a player's impact.</p>
+      <p className="analytics-method-note">Performance score is a role-neutral heuristic using within-match percentile ranks for combat, wards and utility, objectives, economy and survival. GPM and last hits have limited weight; missing categories are excluded and remaining weights are renormalized. It is not an official or causal rating.</p>
     </Panel>
     <Panel title="Individual player contribution" subtitle="COMBAT · ECONOMY · OBJECTIVES · SUPPORT">
       <div className="analytics-contribution-table">
-        <div className="analytics-contribution-head"><span>PLAYER / HERO</span><span>K+A</span><span>HERO DMG</span><span>TOWER DMG</span><span>HEALING</span><span>NET WORTH</span><span>SCORE</span></div>
+        <div className="analytics-contribution-head"><span>PLAYER / HERO</span><span>K+A</span><span>HERO DMG</span><span>TOWER DMG</span><span>HEALING</span><span>NET WORTH</span><span>WARDS</span><span>STACKS</span><span>STUNS</span><span>SCORE</span></div>
         {ranked.map(p => <div className="analytics-contribution-row" key={p.player_slot}>
           <div className="analytics-contribution-player">{p.hero_image ? <img src={p.hero_image} alt={p.hero_name || "Hero"} /> : <div className="analytics-hero-fallback">?</div>}<div><strong>{playerName(p)}</strong><small>{p.hero_name || "Unknown hero"}</small></div></div>
-          <span>{p.kills + p.assists}</span><span>{number(p.hero_damage)}</span><span>{number(p.tower_damage)}</span><span>{number(p.hero_healing)}</span><span>{number(p.net_worth)}</span><strong>{playerScore(p, match.players).toFixed(0)}</strong>
+          <span>{p.kills + p.assists}</span><span>{number(p.hero_damage)}</span><span>{number(p.tower_damage)}</span><span>{number(p.hero_healing)}</span><span>{number(p.net_worth)}</span><span>{(p.obs_placed || 0) + (p.sen_placed || 0)}</span><span>{p.camps_stacked ?? "—"}</span><span>{p.stuns ?? "—"}</span><strong>{playerScore(p, match.players).toFixed(0)}</strong>
         </div>)}
       </div>
     </Panel>

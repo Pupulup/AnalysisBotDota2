@@ -54,6 +54,103 @@ query GetMatch($matchId: Long!) {
 }
 """
 
+GUIDE_QUERY = """
+query HeroGuide($heroId: Short!) {
+  heroStats {
+    heroBase: winDay(take: 30, heroIds: [$heroId]) {
+      matchCount
+      winCount
+    }
+    startingItems: itemStartingPurchase(heroId: $heroId) {
+      matchCount
+      winCount
+      itemId
+    }
+    earlyItems: itemFullPurchase(heroId: $heroId, minTime: 1, maxTime: 15) {
+      matchCount
+      winCount
+      itemId
+    }
+    midItems: itemFullPurchase(heroId: $heroId, minTime: 16, maxTime: 30) {
+      matchCount
+      winCount
+      itemId
+    }
+    lateItems: itemFullPurchase(heroId: $heroId, minTime: 31) {
+      matchCount
+      winCount
+      itemId
+    }
+    firstPoints: abilityMinLevel(heroId: $heroId) {
+      matchCount
+      winCount
+      abilityId
+      level
+    }
+    maxLevels: abilityMaxLevel(heroId: $heroId) {
+      matchCount
+      winCount
+      abilityId
+      level
+    }
+    talents: talent(heroId: $heroId) {
+      matchCount
+      winCount
+      abilityId
+      time
+      timeAverage
+    }
+    heroVsHeroMatchup(heroId: $heroId) {
+      advantage {
+        heroId
+        matchCountWith
+        matchCountVs
+        with {
+          heroId2
+          matchCount
+          winCount
+          synergy
+          winRateHeroId1
+          winRateHeroId2
+          winsAverage
+        }
+        vs {
+          heroId2
+          matchCount
+          winCount
+          synergy
+          winRateHeroId1
+          winRateHeroId2
+          winsAverage
+        }
+      }
+      disadvantage {
+        heroId
+        matchCountWith
+        matchCountVs
+        with {
+          heroId2
+          matchCount
+          winCount
+          synergy
+          winRateHeroId1
+          winRateHeroId2
+          winsAverage
+        }
+        vs {
+          heroId2
+          matchCount
+          winCount
+          synergy
+          winRateHeroId1
+          winRateHeroId2
+          winsAverage
+        }
+      }
+    }
+  }
+}"""
+
 PLAYBACK_QUERY = """
 query GetMatchPlayback($matchId: Long!) {
   match(id: $matchId) {
@@ -83,7 +180,7 @@ class StratzClient:
     def enabled(self) -> bool:
         return bool(self.api_key)
 
-    async def _graphql(self, query: str, match_id: int) -> dict[str, Any]:
+    async def _graphql(self, query: str, variables: int | dict[str, Any]) -> dict[str, Any]:
         if not self.enabled:
             raise StratzError("STRATZ_API_KEY не настроен.")
 
@@ -98,7 +195,7 @@ class StratzClient:
                 response = await client.post(
                     STRATZ_API_URL,
                     headers=headers,
-                    json={"query": query, "variables": {"matchId": match_id}},
+                    json={"query": query, "variables": variables if isinstance(variables, dict) else {"matchId": variables}},
                 )
             if response.status_code == 401 or response.status_code == 403:
                 raise StratzError("STRATZ отклонил API-токен. Проверь STRATZ_API_KEY.")
@@ -123,10 +220,9 @@ class StratzClient:
             raise StratzError(f"Ошибка GraphQL STRATZ: {messages}")
 
         data = payload.get("data") or {}
-        match = data.get("match")
-        if not isinstance(match, dict):
-            raise StratzError("STRATZ не вернул данные для указанного матча.")
-        return match
+        if not isinstance(data, dict) or not data:
+            raise StratzError("STRATZ вернул пустой ответ GraphQL.")
+        return data
 
     @staticmethod
     def timestamp(value: Any) -> int | None:
@@ -147,19 +243,36 @@ class StratzClient:
                     return None
         return None
 
+    async def get_hero_guide(self, hero_id: int) -> dict[str, Any]:
+        if not self.enabled:
+            raise StratzError("STRATZ_API_KEY не настроен.")
+        data = await self._graphql(GUIDE_QUERY, {"heroId": hero_id})
+        if not isinstance(data.get("heroStats"), dict):
+            raise StratzError("STRATZ не вернул статистику гайда для этого героя.")
+        return data
+
     async def get_match(self, match_id: int, include_playback: bool = True) -> dict[str, Any]:
-        match = await self._graphql(MATCH_QUERY, match_id)
+        data = await self._graphql(MATCH_QUERY, match_id)
+        match = data.get("match")
+        if not isinstance(match, dict):
+            raise StratzError("STRATZ не вернул данные для указанного матча.")
         start_time = self.timestamp(match.get("startDateTime"))
         if include_playback and start_time is not None:
             age_seconds = int(datetime.now(timezone.utc).timestamp()) - start_time
             if 0 <= age_seconds <= 90 * 24 * 60 * 60:
-                playback_match = await self._graphql(PLAYBACK_QUERY, match_id)
-                playback_players = playback_match.get("players") or []
-                playback_by_account = {
-                    str(player.get("steamAccountId")): player.get("playbackData") or {}
-                    for player in playback_players
-                }
-                for player in match.get("players") or []:
-                    account_id = str(player.get("steamAccountId"))
-                    player["_playback"] = playback_by_account.get(account_id, {})
+                try:
+                    playback_data = await self._graphql(PLAYBACK_QUERY, match_id)
+                    playback_match = playback_data.get("match") or {}
+                    playback_players = playback_match.get("players") or []
+                    playback_by_account = {
+                        str(player.get("steamAccountId")): player.get("playbackData") or {}
+                        for player in playback_players
+                    }
+                    for player in match.get("players") or []:
+                        account_id = str(player.get("steamAccountId"))
+                        player["_playback"] = playback_by_account.get(account_id, {})
+                except StratzError:
+                    # Keep the STRATZ match summary even when playback is unavailable.
+                    for player in match.get("players") or []:
+                        player["_playback"] = {}
         return match
