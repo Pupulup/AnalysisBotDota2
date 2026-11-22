@@ -78,6 +78,9 @@ export interface MatchData {
   start_time: number | null;
   game_mode: number | null;
   lobby_type: number | null;
+  game_mode_name?: string | null;
+  lobby_type_name?: string | null;
+  mode_category?: "ranked" | "turbo" | "unranked" | "other" | "unknown";
   human_players: number | null;
   is_parsed: boolean;
   data_source?: string;
