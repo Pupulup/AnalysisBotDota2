@@ -101,6 +101,7 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
                 inventory.append({
                     "id": int(item_id),
                     "name": item.get("name") if item else f"Item #{item_id}",
+                    "key": item.get("key") if item else None,
                     "slot": f"item_{index}",
                 })
         player["item_inventory"] = inventory
@@ -253,6 +254,7 @@ async def get_match(
                     inventory.append({
                         "id": int(item_id),
                         "name": item.get("name") if item else f"Item #{item_id}",
+                        "key": item.get("key") if item else None,
                         "slot": slot,
                     })
             player_data["item_inventory"] = inventory
