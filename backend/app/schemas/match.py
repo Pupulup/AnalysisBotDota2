@@ -59,7 +59,7 @@ class MatchPlayer(BaseModel):
     # Поля для анализа ролей, предметов и эффективности в командных сражениях
     lane_role: int | None = None
     is_roaming: bool | None = None
-    damage_taken: int | None = None
+    damage_taken: Any | None = None
     item_uses: dict[str, int] | None = None
     ability_uses: dict[str, int] | None = None
     item_0: int | None = None
@@ -69,6 +69,7 @@ class MatchPlayer(BaseModel):
     item_4: int | None = None
     item_5: int | None = None
     item_neutral: int | None = None
+    item_inventory: list[dict[str, Any]] | None = None
 
 
 class MatchResponse(BaseModel):
