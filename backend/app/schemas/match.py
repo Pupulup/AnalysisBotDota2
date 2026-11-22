@@ -48,6 +48,8 @@ class MatchPlayer(BaseModel):
     position: str | None = None
     lane: str | None = None
     role: str | None = None
+    position_events: list[dict[str, Any]] | None = None
+    death_events: list[dict[str, Any]] | None = None
     is_roaming: bool | None = None
     damage_taken: Any | None = None
     item_uses: dict[str, int] | None = None
