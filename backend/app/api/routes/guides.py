@@ -27,8 +27,9 @@ def normalize_stratz_items(rows: list[dict] | None, items: dict) -> list[dict]:
             "matches": matches,
             "wins": wins,
             "win_rate": (wins / matches * 100) if matches else None,
+            "adjusted_win_rate": ((wins + 50) / (matches + 100) * 100) if matches else None,
         })
-    return sorted(result, key=lambda entry: (entry["win_rate"] or 0, entry["matches"]), reverse=True)
+    return sorted(result, key=lambda entry: (entry["adjusted_win_rate"] or 0, entry["matches"]), reverse=True)
 
 
 def normalize_opendota_items(values: dict | None, items: dict) -> list[dict]:
@@ -47,6 +48,7 @@ def normalize_opendota_items(values: dict | None, items: dict) -> list[dict]:
             "matches": matches,
             "wins": None,
             "win_rate": None,
+            "adjusted_win_rate": None,
         })
     return sorted(result, key=lambda entry: entry["matches"], reverse=True)
 
