@@ -71,7 +71,7 @@ function DecisionAnalysis({ match, language }: Props) {
       .sort((a: { delta: number }, b: { delta: number }) => a.delta - b.delta)[0];
     return {
       index, start, end, radiantDeaths, direDeaths, radiantGold, direGold,
-      radiantDamage, direDamage, swing, advantageChange, nearbyObjective
+      radiantDamage, direDamage, swing, advantageChange, advantageBefore: before, advantageAfter: after, nearbyObjective
     };
   });
 
@@ -111,6 +111,25 @@ function DecisionAnalysis({ match, language }: Props) {
         <div><span>{copy(language, "Fight deaths", "Смерти в сражениях")}</span><strong>{fmt(fightRows.reduce((sum, fight) => sum + fight.radiantDeaths + fight.direDeaths, 0))}</strong></div>
         <div><span>{copy(language, "Purchase events", "Покупки")}</span><strong>{fmt(allPurchaseCount)}</strong></div>
       </div>
+    </Panel>
+
+    <Panel title={copy(language, "Fight impact and follow-up", "Последствия командных сражений")} subtitle={copy(language, "GOLD SWING · ADVANTAGE CHANGE · OBJECTIVE FOLLOW-UP", "ИЗМЕНЕНИЕ ЗОЛОТА · ДИНАМИКА ПРЕИМУЩЕСТВА · ДЕЙСТВИЯ ПОСЛЕ БОЯ")}>
+      {fightRows.length ? <div className="decision-list">{fightRows.map(fight => {
+        const objectiveEvent = fight.nearbyObjective?.event as Record<string, any> | undefined;
+        const before = fight.advantageBefore == null ? null : Number(fight.advantageBefore);
+        const after = fight.advantageAfter == null ? null : Number(fight.advantageAfter);
+        const reversed = before != null && after != null &&
+          ((before >= 3000 && after <= 0) || (before <= -3000 && after >= 0));
+        const signed = (value: number | null) => value == null ? "—" : `${value > 0 ? "+" : ""}${fmt(value)}`;
+        return <article className="decision-event" key={fight.index}>
+          <div className="decision-event-top"><strong>{copy(language, "Fight", "Сражение")} #{fight.index + 1}</strong><span>{clock(fight.start)} – {clock(fight.end)}</span></div>
+          <p>{teamName(true, language)}: {fight.radiantDeaths} {copy(language, "deaths", "смертей")} · {teamName(false, language)}: {fight.direDeaths} {copy(language, "deaths", "смертей")}</p>
+          <p>{copy(language, "Net gold swing (Radiant perspective):", "Чистое изменение золота (со стороны Света):")} <strong>{signed(fight.swing)}</strong> · {copy(language, "Gold advantage change:", "Изменение преимущества по золоту:")} <strong>{signed(fight.advantageChange)}</strong></p>
+          {reversed && <p className="decision-warning">{copy(language, "The gold lead changed sides around this fight. Review the sequence; timing alone does not prove causation.", "В районе этого сражения преимущество по золоту перешло к другой команде. Стоит разобрать эпизод; совпадение по времени не доказывает причинность.")}</p>}
+          {objectiveEvent ? <p>{copy(language, "Objective within 3 minutes:", "Объект в течение 3 минут:")} <strong>{eventTitle(objectiveEvent, language)}</strong>{objectiveEvent.team !== undefined ? ` · ${teamName(objectiveEvent.team === 0 || objectiveEvent.team === "radiant", language)}` : ""} · {clock(Number(objectiveEvent.time) || 0)}</p>
+            : <p>{copy(language, "No objective event was recorded within 3 minutes after this fight.", "В течение 3 минут после сражения событие захвата объекта не зафиксировано.")}</p>}
+        </article>;
+      })}</div> : <div className="analytics-empty">{copy(language, "No parsed teamfights are available.", "Нет обработанных данных о командных сражениях.")}</div>}
     </Panel>
 
     <Panel title={copy(language, "Deaths before objectives", "Смерти перед важными объектами")} subtitle={copy(language, "TEAMFIGHTS ENDING WITHIN 3 MINUTES BEFORE AN OBJECTIVE", "СРАЖЕНИЯ, ЗАВЕРШИВШИЕСЯ НЕ БОЛЕЕ ЧЕМ ЗА 3 МИНУТЫ ДО ОБЪЕКТА")}>
