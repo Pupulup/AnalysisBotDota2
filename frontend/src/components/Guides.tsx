@@ -4,11 +4,13 @@ import "./Guides.css";
 
 type Hero = { id: number; name: string; image?: string | null };
 type ItemStat = { item_id: number; name: string; key?: string | null; matches: number; wins?: number | null; win_rate?: number | null };
+type SkillStat = { ability_id: number; name: string; level?: number | null; time?: number | null; time_average?: number | null; matches: number; wins: number; win_rate: number | null };
 type GuideData = {
   hero: Hero;
   build: Record<string, ItemStat[]>;
-  abilities: Array<{ abilityId: number; matchCount: number; winCount: number }>;
-  talents: Array<{ abilityId: number; matchCount: number; winCount: number }>;
+  first_points: SkillStat[];
+  max_levels: SkillStat[];
+  talents: SkillStat[];
   enemy_matchups: Array<{ hero_id: number; games: number; wins: number; win_rate: number | null; edge?: number | null }>;
   ally_synergies: Array<{ hero_id: number; games: number; wins: number; win_rate: number | null; edge?: number | null }>;
   matchup_data_available: boolean;
@@ -131,12 +133,13 @@ export default function Guides({ language }: { language: Lang }) {
       </section>
 
       <section className="analytics-panel">
-        <div className="analytics-panel-heading"><div><h2>{copy(language,"Ability and talent trends","Популярность способностей и талантов")}</h2><span>{copy(language,"PICK FREQUENCY AND WIN RATE","ЧАСТОТА ВЫБОРА И ВИНРЕЙТ")}</span></div></div>
+        <div className="analytics-panel-heading"><div><h2>{copy(language,"Skill build and talents","Раскачка способностей и таланты")}</h2><span>{copy(language,"FIRST POINT · MAX LEVEL · TALENT CHOICES","ПЕРВОЕ ОЧКО · МАКСИМАЛЬНЫЙ УРОВЕНЬ · ВЫБОР ТАЛАНТОВ")}</span></div></div>
         <div className="guide-ability-grid">
-          <div><h3>{copy(language,"Abilities","Способности")}</h3>{guide.abilities?.length ? guide.abilities.slice(0,12).map((entry,index)=><div className="guide-ability-row" key={entry.abilityId}><span>#{entry.abilityId}</span><b>{(entry.matchCount || 0).toLocaleString()}</b><small>{entry.matchCount ? ((entry.winCount || 0)/entry.matchCount*100).toFixed(1)+"%" : "—"}</small></div>) : <p className="guide-empty">{copy(language,"Ability distribution is unavailable.","Распределение прокачки способностей недоступно.")}</p>}</div>
-          <div><h3>{copy(language,"Talents","Таланты")}</h3>{guide.talents?.length ? guide.talents.slice(0,8).map(entry=><div className="guide-ability-row" key={entry.abilityId}><span>#{entry.abilityId}</span><b>{(entry.matchCount || 0).toLocaleString()}</b><small>{entry.matchCount ? (entry.winCount/entry.matchCount*100).toFixed(1)+"%" : "—"}</small></div>) : <p className="guide-empty">{copy(language,"Talent distribution is unavailable.","Статистика талантов недоступна.")}</p>}</div>
+          <div><h3>{copy(language,"First skill point","Первое изучение")}</h3>{guide.first_points?.length ? guide.first_points.slice(0,12).map((entry,index)=><div className="guide-ability-row" key={entry.ability_id}><span>{entry.name} · Lv {entry.level ?? "—"}</span><b>{entry.matches.toLocaleString()}</b><small>{entry.win_rate == null ? "—" : entry.win_rate.toFixed(1)+"%"}</small></div>) : <p className="guide-empty">{copy(language,"First-point data is unavailable.","Нет данных о первом изучении способностей.")}</p>}</div>
+          <div><h3>{copy(language,"Ability max level","Максимальный уровень")}</h3>{guide.max_levels?.length ? guide.max_levels.slice(0,12).map((entry,index)=><div className="guide-ability-row" key={entry.ability_id}><span>{entry.name} · Lv {entry.level ?? "—"}</span><b>{entry.matches.toLocaleString()}</b><small>{entry.win_rate == null ? "—" : entry.win_rate.toFixed(1)+"%"}</small></div>) : <p className="guide-empty">{copy(language,"Max-level data is unavailable.","Нет данных о приоритете максимального уровня.")}</p>}</div>
+          <div><h3>{copy(language,"Talents","Таланты")}</h3>{guide.talents?.length ? guide.talents.slice(0,10).map(entry=><div className="guide-ability-row" key={entry.ability_id}><span>{entry.name}</span><b>{entry.matches.toLocaleString()}</b><small>{entry.win_rate == null ? "—" : entry.win_rate.toFixed(1)+"%"}</small></div>) : <p className="guide-empty">{copy(language,"Talent distribution is unavailable.","Статистика талантов недоступна.")}</p>}</div>
         </div>
-        <p className="guide-note">{copy(language,"STRATZ ability statistics show aggregate selections; they are not yet a verified level-by-level skill order. The exact skill sequence will be added after validating the corresponding GraphQL field.","Статистика способностей STRATZ показывает агрегированную частоту выбора, но пока не является проверенной последовательностью прокачки по уровням. Точный порядок изучения навыков добавим после проверки соответствующего поля GraphQL.")}</p>
+        <p className="guide-note">{copy(language,"STRATZ provides aggregated first-point and max-level distributions, not a single fixed 1–30 skill sequence. The tables show the most common level choices and their sample sizes.","STRATZ предоставляет агрегированные распределения первого изучения и максимального уровня способностей, а не единую фиксированную последовательность прокачки с 1-го по 30-й уровень. Таблицы показывают наиболее частые варианты и размер выборки.")}</p>
       </section>
 
       <section className="analytics-panel">
