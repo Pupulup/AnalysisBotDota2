@@ -526,6 +526,7 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
         <div><span>DIRE</span><strong>{match.dire_score}</strong></div>
       </div>
       <p className="pdf-report-coverage">{match.is_parsed ? "Parsed match data" : "Partial match data"} · {match.players.length} player records · {match.objectives?.length || 0} objective events · {match.teamfights?.length || 0} teamfights</p>
+      <p className="pdf-report-coverage">Game mode: {match.game_mode_name || `ID ${match.game_mode ?? "Unknown"}`} · Lobby: {match.lobby_type_name || `ID ${match.lobby_type ?? "Unknown"}`} · Patch ID: {match.patch_id ?? "Unknown"}</p>
     </header>
 
     <section className="pdf-report-section">
