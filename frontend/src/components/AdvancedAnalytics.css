@@ -47,7 +47,7 @@
 .item-icon-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}
 .item-icon-wrap{display:flex;align-items:center;gap:6px;min-width:0;padding:5px 7px;background:#121b28;border:1px solid #29384d;border-radius:6px}
 .item-icon-wrap img,.purchase-icon-row img,.advanced-purchase-timeline img{width:28px;height:28px;object-fit:contain;flex-shrink:0}
-.item-icon-wrap span{font-size:8px;color:#b8c7da;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item-icon-wrap>div{display:flex;flex-direction:column;gap:3px;min-width:0}.item-icon-wrap span{font-size:8px;color:#b8c7da;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.item-icon-wrap small{font-size:7px;color:#8295ad;white-space:nowrap}
 .purchase-icon-row{display:grid!important;grid-template-columns:48px 30px minmax(0,1fr)!important;gap:8px!important;align-items:center}
 .advanced-purchase-timeline>div{grid-template-columns:50px minmax(70px,.8fr) 30px minmax(0,1.2fr)}
 @media(max-width:750px){.advanced-purchase-timeline>div{grid-template-columns:48px minmax(55px,.8fr) 28px minmax(0,1.2fr)}}
