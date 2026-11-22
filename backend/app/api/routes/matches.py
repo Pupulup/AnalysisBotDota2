@@ -20,8 +20,11 @@ def replay_age_days(start_time: int | None) -> int | None:
     return max(0, (now - start_time) // 86400)
 
 
-def replay_allowed(age_days: int | None) -> bool:
-    return age_days is not None and age_days <= MAX_REPLAY_AGE_DAYS
+def replay_allowed(start_time: int | None) -> bool:
+    if start_time is None:
+        return False
+    now = datetime.now(timezone.utc).timestamp()
+    return 0 <= now - start_time <= MAX_REPLAY_AGE_DAYS * 86400
 
 
 def normalize_stratz_match(data: dict, match_id: int, items: dict) -> MatchResponse:
@@ -115,7 +118,7 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict) -> MatchRespo
         is_parsed=has_playback,
         data_source="stratz",
         replay_age_days=age_days,
-        replay_analysis_allowed=replay_allowed(age_days),
+        replay_analysis_allowed=replay_allowed(start_time),
         players=players,
     )
 
@@ -133,7 +136,7 @@ async def request_match_parse(
             start_time = match_data.get("start_time")
 
         age_days = replay_age_days(start_time)
-        if not replay_allowed(age_days):
+        if not replay_allowed(start_time):
             raise HTTPException(
                 status_code=400,
                 detail=(
@@ -232,7 +235,7 @@ async def get_match(
             ),
             data_source="opendota",
             replay_age_days=age_days,
-            replay_analysis_allowed=replay_allowed(age_days),
+            replay_analysis_allowed=replay_allowed(data.get("start_time")),
             players=players,
             radiant_gold_adv=data.get("radiant_gold_adv"),
             radiant_xp_adv=data.get("radiant_xp_adv"),
