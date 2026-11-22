@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Swords, ChartNoAxesCombined, Trophy, Activity,
-  ChevronRight, Search, Clock, Shield, RefreshCw, Package, Coins, BrainCircuit, BookOpen, User
+  ChevronRight, Search, Clock, Shield, RefreshCw, Package, Coins, BrainCircuit, BookOpen, User, Map
 } from "lucide-react";
 import {
   AnalysisSection,
@@ -15,6 +15,7 @@ import AdvancedAnalytics from "./components/AdvancedAnalytics";
 import DecisionAnalysis from "./components/DecisionAnalysis";
 import Guides from "./components/Guides";
 import PlayerProfile from "./components/PlayerProfile";
+import MapAnalysis from "./components/MapAnalysis";
 import { I18nProvider, Localize } from "./i18n";
 import type { Language } from "./i18n";
 import "./App.css";
@@ -30,6 +31,7 @@ const navigation = [
   { name: "Economy", icon: Coins },
   { name: "Guides", icon: BookOpen },
   { name: "Player", icon: User },
+  { name: "Map", icon: Map },
   // { name: "Trends", icon: TrendingUp }, // Temporarily hidden; may return later.
 ];
 
@@ -129,6 +131,8 @@ function App() {
         return <><DecisionAnalysis match={match} language={language} /><AdvancedAnalytics match={match} language={language} section="Fights" /></>;
       case "Guides":
         return <Guides language={language} />;
+      case "Map":
+        return <MapAnalysis match={match} language={language} />;
       case "Items":
       case "Economy":
         return <AdvancedAnalytics match={match} language={language} section={activeTab as "Items" | "Economy"} />;
@@ -145,6 +149,7 @@ function App() {
     Review: "Match Review",
     Guides: "Hero Guides",
     Player: "Player Performance",
+    Map: "Map Analysis",
     Items: "Item Builds",
     Economy: "Economy Analysis",
 
