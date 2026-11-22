@@ -20,6 +20,7 @@ type PlayerAnalytics = {
   recent_period: Summary;
   previous_period: Summary | null;
   period_delta: Record<string, number | null> | null;
+  insights: Array<{ code: string; severity: "warning" | "info" | "positive"; delta: number | null }>;
   role_breakdown: Array<{ label: string; matches: number; win_rate: number | null; avg_gpm: number | null; avg_xpm: number | null; avg_kda: number | null }>;
   hero_breakdown: Array<{ hero_id: number; hero_name: string; hero_image?: string | null; matches: number; win_rate: number | null; avg_gpm: number | null; avg_kda: number | null }>;
   trend: Array<{ match_id: number; start_time: number; win: boolean | null; hero_name: string; hero_image?: string | null; lane_role_name: string; kills: number; deaths: number; assists: number; gold_per_min: number | null; xp_per_min: number | null; hero_damage: number | null }>;
@@ -144,6 +145,22 @@ export default function PlayerProfile({ language }: { language: Lang }) {
       </div>
 
       {data.sample.count < 10 && <div className="player-analytics-warning">{copy(language, "Fewer than 10 matches were found for this mode and patch. Treat all averages as preliminary.", "Для этого режима и патча найдено меньше 10 матчей. Средние показатели пока предварительные.")}</div>}
+
+      <Panel title={copy(language, "Coaching signals", "Сигналы для улучшения")} subtitle={copy(language, "HEURISTIC COMPARISON · NOT CAUSAL PROOF", "ЭВРИСТИЧЕСКОЕ СРАВНЕНИЕ · НЕ ДОКАЗАТЕЛЬСТВО ПРИЧИНЫ")}>
+        <div className="player-insights-list">{data.insights.map((insight, index) => {
+          const textByCode: Record<string, [string, string]> = {
+            deaths_increased: ["Average deaths increased versus the previous 10 matches. Review positioning and death timings.", "Среднее число смертей выросло относительно предыдущих 10 матчей. Проверьте позиционирование и моменты смертей."],
+            kda_decreased: ["KDA decreased noticeably. Review fight selection and survival.", "KDA заметно снизился. Проверьте выбор сражений и выживаемость."],
+            gpm_decreased: ["GPM decreased. Review farming tempo and downtime between actions.", "GPM снизился. Проверьте темп фарма и простои между действиями."],
+            win_rate_decreased: ["Win rate decreased. Review the recent match set rather than attributing the change to one metric.", "Винрейт снизился. Анализируйте последние матчи в целом, не связывая результат с одним показателем."],
+            gpm_improved: ["GPM improved compared with the previous period.", "GPM вырос относительно предыдущего периода."],
+            kda_improved: ["KDA improved compared with the previous period.", "KDA вырос относительно предыдущего периода."],
+            insufficient_history: ["At least 20 matches in this mode and patch are needed to compare two periods.", "Для сравнения двух периодов нужно не менее 20 матчей в этом режиме и патче."],
+          };
+          const pair = textByCode[insight.code] || ["Review the recent match sample.", "Проверьте выборку последних матчей."];
+          return <div className={"player-insight " + insight.severity} key={index}><span>{insight.severity === "warning" ? "!" : insight.severity === "positive" ? "↑" : "i"}</span><p>{copy(language, pair[0], pair[1])}</p></div>;
+        })}</div>
+      </Panel>
 
       <Panel title={copy(language, "Performance trend", "Динамика показателей")} subtitle={copy(language, "OLDEST → NEWEST · CURRENT PATCH ONLY", "ОТ СТАРЫХ К НОВЫМ · ТОЛЬКО ТЕКУЩИЙ ПАТЧ")}>
         {data.trend.length ? <div className="player-analytics-chart"><ReactECharts option={trendOption} style={{ height: 300, width: "100%" }} /></div> : <p className="player-analytics-empty">{copy(language, "No matches found for this mode in the current patch.", "В текущем патче не найдено матчей для выбранного режима.")}</p>}
