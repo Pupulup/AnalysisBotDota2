@@ -106,6 +106,41 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
                 })
         player["item_inventory"] = inventory
 
+        # Fill only fields omitted by STRATZ from the OpenDota supplemental response.
+        stratz_field_map = {
+            "kills": "kills", "deaths": "deaths", "assists": "assists",
+            "gold_per_min": "goldPerMinute", "xp_per_min": "experiencePerMinute",
+            "last_hits": "numLastHits", "denies": "numDenies", "net_worth": "networth",
+            "hero_damage": "heroDamage", "tower_damage": "towerDamage",
+            "hero_healing": "heroHealing", "level": "level",
+        }
+        for target_field, source_field in stratz_field_map.items():
+            if raw.get(source_field) is None and fallback_player.get(target_field) is not None:
+                player[target_field] = fallback_player[target_field]
+
+        if player.get("personaname") is None:
+            player["personaname"] = fallback_player.get("personaname")
+        if player.get("hero_id") is None:
+            player["hero_id"] = fallback_player.get("hero_id")
+        if player.get("hero_name") in (None, "Unknown Hero"):
+            player["hero_name"] = fallback_player.get("hero_name") or player.get("hero_name")
+        if player.get("hero_image") is None:
+            player["hero_image"] = fallback_player.get("hero_image")
+
+        for index in range(6):
+            slot_name = f"item_{index}"
+            if raw.get(f"item{index}Id") is None and fallback_player.get(slot_name):
+                item_id = int(fallback_player[slot_name])
+                player[slot_name] = item_id
+                if not any(entry.get("id") == item_id for entry in inventory):
+                    item = items.get(item_id)
+                    inventory.append({
+                        "id": item_id,
+                        "name": item.get("name") if item else f"Item #{item_id}",
+                        "key": item.get("key") if item else None,
+                        "slot": slot_name,
+                    })
+
         playback = raw.get("_playback") or {}
         purchases = playback.get("purchaseEvents") or []
         if purchases:
