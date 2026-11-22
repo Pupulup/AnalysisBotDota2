@@ -42,6 +42,20 @@ class PlayerAnalyticsTests(unittest.TestCase):
         self.assertEqual(result["sample"]["count"], 2)
         self.assertEqual(result["hero_breakdown"][0]["hero_name"], "Anti-Mage")
 
+    def test_position_breakdown_uses_stratz_position(self):
+        matches = [
+            {**self.matches[0], "position": "POSITION_1"},
+            {**self.matches[1], "position": "POSITION_1"},
+        ]
+        result = build_player_analytics(
+            123, {"profile": {}}, {"id": 99, "name": "7.xx", "date": "2026-01-01"},
+            "ranked", matches, {},
+            data_source="stratz",
+        )
+        self.assertEqual(result["data_source"], "stratz")
+        self.assertEqual(result["position_breakdown"][0]["label"], "Position 1")
+        self.assertEqual(result["position_breakdown"][0]["matches"], 2)
+
     def test_sample_level_is_conservative(self):
         result = build_player_analytics(
             123, {"profile": {}}, {"id": 1, "name": "7.xx", "date": "2026-01-01"},
