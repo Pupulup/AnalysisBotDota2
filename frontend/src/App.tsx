@@ -8,10 +8,8 @@ import {
   MatchData,
   MatchPlayer,
   OverviewSection,
-  PlayersSection,
   PlayerDetail,
-  TimelineSection,
-  TeamsSection
+  TimelineSection
 } from "./components/AnalyticsSections";
 import AdvancedAnalytics from "./components/AdvancedAnalytics";
 import DecisionAnalysis from "./components/DecisionAnalysis";
@@ -23,16 +21,12 @@ const API_URL = "";
 
 const navigation = [
   { name: "Overview", icon: Activity },
-  { name: "Players", icon: Users },
   { name: "Timeline", icon: ChartNoAxesCombined },
-  { name: "Teams", icon: Swords },
   { name: "Analysis", icon: Trophy },
-  { name: "Decisions", icon: BrainCircuit },
-  { name: "Fights", icon: Flame },
+  { name: "Review", icon: BrainCircuit },
   { name: "Items", icon: Package },
   { name: "Economy", icon: Coins },
-  { name: "Roles", icon: ShieldCheck },
-  { name: "Trends", icon: TrendingUp }
+  // { name: "Trends", icon: TrendingUp }, // Temporarily hidden; may return later.
 ];
 
 function formatDuration(seconds: number) {
@@ -111,40 +105,29 @@ function App() {
   function renderActiveSection() {
     if (!match) return null;
     switch (activeTab) {
-      case "Players":
-        return <PlayersSection match={match} onSelect={setSelectedPlayer} />;
       case "Timeline":
         return <TimelineSection match={match} />;
-      case "Teams":
-        return <TeamsSection match={match} />;
       case "Analysis":
         return <AnalysisSection match={match} />;
-      case "Decisions":
-        return <DecisionAnalysis match={match} language={language} />;
-      case "Fights":
+      case "Review":
+        return <><DecisionAnalysis match={match} language={language} /><AdvancedAnalytics match={match} language={language} section="Fights" /></>;
       case "Items":
       case "Economy":
-      case "Roles":
-      case "Trends":
-        return <AdvancedAnalytics match={match} language={language} section={activeTab as "Fights" | "Items" | "Economy" | "Roles" | "Trends"} />;
+        return <AdvancedAnalytics match={match} language={language} section={activeTab as "Items" | "Economy"} />;
       case "Overview":
       default:
-        return <OverviewSection match={match} />;
+        return <OverviewSection match={match} onSelect={setSelectedPlayer} />;
     }
   }
 
   const activeTitle: Record<string, string> = {
     Overview: "Match Overview",
-    Players: "Player Statistics",
     Timeline: "Match Timeline",
-    Teams: "Team Comparison",
     Analysis: "Match Analysis",
-    Decisions: "Decision Analysis",
-    Fights: "Teamfight Analysis",
+    Review: "Match Review",
     Items: "Item Builds",
     Economy: "Economy Analysis",
-    Roles: "Role Analysis",
-    Trends: "Player Trends"
+
   };
 
   return (
