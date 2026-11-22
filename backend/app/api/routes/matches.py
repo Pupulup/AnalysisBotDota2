@@ -190,6 +190,7 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
         start_time=start_time,
         game_mode=data.get("gameMode"),
         lobby_type=data.get("lobbyType"),
+        patch_id=fallback_data.get("patch"),
         **mode_info,
         human_players=len(raw_players),
         is_parsed=(
@@ -324,6 +325,7 @@ async def get_match(
             start_time=data.get("start_time"),
             game_mode=data.get("game_mode"),
             lobby_type=data.get("lobby_type"),
+            patch_id=data.get("patch"),
             **mode_info,
             human_players=data.get("human_players"),
             is_parsed=(
