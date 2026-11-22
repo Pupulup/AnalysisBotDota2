@@ -75,7 +75,7 @@ function DecisionAnalysis({ match, language }: Props) {
     };
   });
 
-  const objectiveRows: EventRow[] = objectives.map((event: Record<string, any>) => ({
+  const objectiveRows: EventRow[] = objectives.map((event: Record<string, any>): EventRow => ({
     time: Number(event.time) || 0,
     label: eventTitle(event, language),
     team: event.team === 0 || event.team === "radiant" ? "Radiant" : event.team === 1 || event.team === "dire" ? "Dire" : undefined,
