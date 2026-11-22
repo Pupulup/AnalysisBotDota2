@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, HTTPException, Query
 
 from app.services.opendota import OpenDotaClient, OpenDotaError
@@ -74,7 +76,7 @@ async def get_hero_guide(
         raise HTTPException(status_code=400, detail="Некорректный ID героя.")
 
     try:
-        heroes, items = await __import__("asyncio").gather(
+        heroes, items = await asyncio.gather(
             opendota.get_hero_stats(),
             opendota.get_items(),
         )
