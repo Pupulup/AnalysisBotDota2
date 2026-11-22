@@ -89,6 +89,9 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
             "tower_damage": raw.get("towerDamage") or 0,
             "hero_healing": raw.get("heroHealing") or 0,
             "level": raw.get("level") or 0,
+            "position": raw.get("position"),
+            "lane": raw.get("lane"),
+            "role": raw.get("role"),
         }
 
         for index in range(6):
