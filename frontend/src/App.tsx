@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Swords, ChartNoAxesCombined, Trophy, Activity,
-  ChevronRight, Search, Clock, Shield, RefreshCw, Package, Coins, BrainCircuit
+  ChevronRight, Search, Clock, Shield, RefreshCw, Package, Coins, BrainCircuit, BookOpen
 } from "lucide-react";
 import {
   AnalysisSection,
@@ -13,6 +13,7 @@ import {
 } from "./components/AnalyticsSections";
 import AdvancedAnalytics from "./components/AdvancedAnalytics";
 import DecisionAnalysis from "./components/DecisionAnalysis";
+import Guides from "./components/Guides";
 import { I18nProvider, Localize } from "./i18n";
 import type { Language } from "./i18n";
 import "./App.css";
@@ -26,6 +27,7 @@ const navigation = [
   { name: "Review", icon: BrainCircuit },
   { name: "Items", icon: Package },
   { name: "Economy", icon: Coins },
+  { name: "Guides", icon: BookOpen },
   // { name: "Trends", icon: TrendingUp }, // Temporarily hidden; may return later.
 ];
 
@@ -111,6 +113,8 @@ function App() {
         return <AnalysisSection match={match} />;
       case "Review":
         return <><DecisionAnalysis match={match} language={language} /><AdvancedAnalytics match={match} language={language} section="Fights" /></>;
+      case "Guides":
+        return <Guides language={language} />;
       case "Items":
       case "Economy":
         return <AdvancedAnalytics match={match} language={language} section={activeTab as "Items" | "Economy"} />;
@@ -125,6 +129,7 @@ function App() {
     Timeline: "Match Timeline",
     Analysis: "Match Analysis",
     Review: "Match Review",
+    Guides: "Hero Guides",
     Items: "Item Builds",
     Economy: "Economy Analysis",
 
