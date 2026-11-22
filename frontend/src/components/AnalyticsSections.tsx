@@ -373,6 +373,147 @@ function playerInsight(player: MatchPlayer, allPlayers: MatchPlayer[]) {
   return { score, contributions, positives, concerns };
 }
 
+function reportTime(value?: number | null) {
+  if (value == null || !Number.isFinite(Number(value))) return "—";
+  return duration(Math.max(0, Number(value)));
+}
+
+function reportDate(value?: number | null) {
+  if (!value) return "—";
+  return new Date(value * 1000).toISOString().replace("T", " ").slice(0, 16) + " UTC";
+}
+
+function readableKey(value?: string | null) {
+  if (!value) return "Unknown";
+  return value.replace(/^npc_dota_hero_/, "").replace(/^item_/, "").replace(/_/g, " ");
+}
+
+function ReportMetric({ label, value }: { label: string; value: string | number }) {
+  return <div className="pdf-report-metric"><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlayer[] }) {
+  const radiantPlayers = match.players.filter(radiant);
+  const direPlayers = match.players.filter(p => !radiant(p));
+  const totals = (players: MatchPlayer[]) => ({
+    kills: players.reduce((sum, p) => sum + p.kills, 0),
+    deaths: players.reduce((sum, p) => sum + p.deaths, 0),
+    assists: players.reduce((sum, p) => sum + p.assists, 0),
+    netWorth: players.reduce((sum, p) => sum + p.net_worth, 0),
+    damage: players.reduce((sum, p) => sum + p.hero_damage, 0),
+    towerDamage: players.reduce((sum, p) => sum + p.tower_damage, 0),
+    healing: players.reduce((sum, p) => sum + p.hero_healing, 0),
+    gpm: Math.round(players.reduce((sum, p) => sum + p.gold_per_min, 0) / Math.max(players.length, 1)),
+    xpm: Math.round(players.reduce((sum, p) => sum + p.xp_per_min, 0) / Math.max(players.length, 1))
+  });
+  const r = totals(radiantPlayers);
+  const d = totals(direPlayers);
+  const result = match.radiant_win === null ? "Unknown" : match.radiant_win ? "Radiant victory" : "Dire victory";
+
+  return <article className="match-pdf-report">
+    <header className="pdf-report-header">
+      <div className="pdf-report-brand">DOTA ANALYTICS · MATCH REPORT</div>
+      <h1>Match #{match.match_id}</h1>
+      <p>{result} · {duration(match.duration)} · {reportDate(match.start_time)}</p>
+      <div className="pdf-report-score">
+        <div><span>RADIANT</span><strong>{match.radiant_score}</strong></div>
+        <b>:</b>
+        <div><span>DIRE</span><strong>{match.dire_score}</strong></div>
+      </div>
+      <p className="pdf-report-coverage">{match.is_parsed ? "Parsed match data" : "Partial match data"} · {match.players.length} player records · {match.objectives?.length || 0} objective events · {match.teamfights?.length || 0} teamfights</p>
+    </header>
+
+    <section className="pdf-report-section">
+      <h2>Team comparison</h2>
+      <table className="pdf-report-table">
+        <thead><tr><th>Metric</th><th>Radiant</th><th>Dire</th></tr></thead>
+        <tbody>
+          <tr><td>Kills / Deaths / Assists</td><td>{r.kills} / {r.deaths} / {r.assists}</td><td>{d.kills} / {d.deaths} / {d.assists}</td></tr>
+          <tr><td>Net worth</td><td>{number(r.netWorth)}</td><td>{number(d.netWorth)}</td></tr>
+          <tr><td>Average GPM / XPM</td><td>{r.gpm} / {r.xpm}</td><td>{d.gpm} / {d.xpm}</td></tr>
+          <tr><td>Hero damage</td><td>{number(r.damage)}</td><td>{number(d.damage)}</td></tr>
+          <tr><td>Tower damage</td><td>{number(r.towerDamage)}</td><td>{number(d.towerDamage)}</td></tr>
+          <tr><td>Hero healing</td><td>{number(r.healing)}</td><td>{number(d.healing)}</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section className="pdf-report-section">
+      <h2>Player contribution ranking</h2>
+      <table className="pdf-report-table">
+        <thead><tr><th>#</th><th>Player / Hero</th><th>Team</th><th>K / D / A</th><th>KDA</th><th>GPM</th><th>XPM</th><th>Net worth</th><th>Hero dmg</th><th>Tower dmg</th><th>Score</th></tr></thead>
+        <tbody>{ranked.map((p, index) => <tr key={p.player_slot}>
+          <td>{index + 1}</td><td>{playerName(p)}<small>{p.hero_name || "Unknown hero"}</small></td>
+          <td>{radiant(p) ? "Radiant" : "Dire"}</td><td>{p.kills}/{p.deaths}/{p.assists}</td>
+          <td>{kda(p).toFixed(2)}</td><td>{p.gold_per_min}</td><td>{p.xp_per_min}</td>
+          <td>{number(p.net_worth)}</td><td>{number(p.hero_damage)}</td><td>{number(p.tower_damage)}</td>
+          <td>{playerScore(p, match.players).toFixed(0)}</td>
+        </tr>)}</tbody>
+      </table>
+      <p className="pdf-report-note">Performance score is a heuristic, relative to the players in this match. It is not an official Dota 2 rating.</p>
+    </section>
+
+    <section className="pdf-report-section">
+      <h2>Individual player breakdown</h2>
+      {ranked.map((p, index) => <article className="pdf-player-block" key={p.player_slot}>
+        <div className="pdf-player-heading">
+          <div><span>#{index + 1} · {radiant(p) ? "RADIANT" : "DIRE"}</span><h3>{playerName(p)}</h3><p>{p.hero_name || "Unknown hero"} · Level {p.level}</p></div>
+          <strong>{playerScore(p, match.players).toFixed(0)} / 100</strong>
+        </div>
+        <div className="pdf-report-metrics">
+          <ReportMetric label="K / D / A" value={`${p.kills} / ${p.deaths} / ${p.assists}`} />
+          <ReportMetric label="KDA" value={kda(p).toFixed(2)} />
+          <ReportMetric label="GPM / XPM" value={`${p.gold_per_min} / ${p.xp_per_min}`} />
+          <ReportMetric label="Net worth" value={number(p.net_worth)} />
+          <ReportMetric label="Total gold / XP" value={`${number(p.total_gold ?? 0)} / ${number(p.total_xp ?? 0)}`} />
+          <ReportMetric label="Last hits / denies" value={`${p.last_hits} / ${p.denies}`} />
+          <ReportMetric label="Hero damage" value={number(p.hero_damage)} />
+          <ReportMetric label="Tower damage" value={number(p.tower_damage)} />
+          <ReportMetric label="Healing" value={number(p.hero_healing)} />
+          <ReportMetric label="Teamfight participation" value={p.teamfight_participation == null ? "—" : `${(p.teamfight_participation * 100).toFixed(1)}%`} />
+          <ReportMetric label="Stuns" value={Number(p.stuns || 0).toFixed(1)} />
+          <ReportMetric label="Wards O / S" value={`${p.obs_placed ?? 0} / ${p.sen_placed ?? 0}`} />
+          <ReportMetric label="Tower / Roshan kills" value={`${p.tower_kills ?? 0} / ${p.roshan_kills ?? 0}`} />
+          <ReportMetric label="Buybacks" value={p.buyback_count ?? 0} />
+        </div>
+
+        <div className="pdf-player-logs">
+          <div><h4>Item purchase log</h4>
+            {p.purchase_log?.length ? <table className="pdf-report-table compact"><thead><tr><th>Time</th><th>Item</th></tr></thead><tbody>
+              {p.purchase_log.map((entry, i) => <tr key={i}><td>{reportTime(entry.time)}</td><td>{readableKey(entry.key)}</td></tr>)}
+            </tbody></table> : <p className="pdf-report-note">No purchase log available.</p>}
+          </div>
+          <div><h4>Kill log</h4>
+            {p.kills_log?.length ? <table className="pdf-report-table compact"><thead><tr><th>Time</th><th>Target</th></tr></thead><tbody>
+              {p.kills_log.map((entry, i) => <tr key={i}><td>{reportTime(entry.time)}</td><td>{readableKey(entry.key)}</td></tr>)}
+            </tbody></table> : <p className="pdf-report-note">No kill log available.</p>}
+          </div>
+          <div><h4>Ability upgrades</h4>
+            {p.ability_upgrades?.length ? <table className="pdf-report-table compact"><thead><tr><th>Time</th><th>Ability</th><th>Level</th></tr></thead><tbody>
+              {p.ability_upgrades.map((entry, i) => <tr key={i}><td>{reportTime(entry.time)}</td><td>{readableKey(entry.ability)}</td><td>{entry.level ?? "—"}</td></tr>)}
+            </tbody></table> : <p className="pdf-report-note">No ability upgrade log available.</p>}
+          </div>
+        </div>
+      </article>)}
+    </section>
+
+    <section className="pdf-report-section">
+      <h2>Match events</h2>
+      {match.objectives?.length ? <table className="pdf-report-table"><thead><tr><th>Time</th><th>Event</th><th>Team</th></tr></thead><tbody>
+        {[...match.objectives].sort((a, b) => Number(a.time || 0) - Number(b.time || 0)).map((event, i) => <tr key={i}>
+          <td>{reportTime(Number(event.time))}</td><td>{readableKey(String(event.key || event.type || "Objective"))}</td>
+          <td>{event.team === 2 ? "Radiant" : event.team === 3 ? "Dire" : "Unknown"}</td>
+        </tr>)}
+      </tbody></table> : <p className="pdf-report-note">No objective event log available.</p>}
+      {match.teamfights?.length ? <table className="pdf-report-table"><thead><tr><th>Fight</th><th>Start</th><th>Duration</th><th>Deaths</th></tr></thead><tbody>
+        {match.teamfights.map((fight, i) => <tr key={i}><td>{i + 1}</td><td>{reportTime(Number(fight.start))}</td>
+          <td>{reportTime(Math.max(0, Number(fight.end || 0) - Number(fight.start || 0)))}</td><td>{Number(fight.deaths || 0)}</td></tr>)}
+      </tbody></table> : <p className="pdf-report-note">No teamfight details available.</p>}
+    </section>
+    <footer className="pdf-report-footer">Generated by Dota Analytics · Data source: OpenDota · Missing fields are shown as unavailable or zero only where the API returns no value.</footer>
+  </article>;
+}
+
 export function AnalysisSection({ match }: { match: MatchData }) {
   const ranked = [...match.players].sort((a, b) => playerScore(b, match.players) - playerScore(a, match.players));
   const top = ranked[0];
@@ -382,6 +523,11 @@ export function AnalysisSection({ match }: { match: MatchData }) {
   const loserDamage = loserPlayers.reduce((s, p) => s + p.hero_damage, 0);
 
   return <div className="analytics-page">
+    <div className="analytics-report-actions">
+      <span>Export a detailed match report with player-by-player statistics and event logs.</span>
+      <button onClick={() => window.print()}><Printer size={15} /> Export PDF report</button>
+    </div>
+    <MatchPdfReport match={match} ranked={ranked} />
     <Panel title="Match interpretation" subtitle="AUTOMATED STATISTICAL SUMMARY">
       <div className="analytics-insight-grid">
         <div><Award size={20} /><span>Performance leader</span><strong>{top ? playerName(top) : "Unavailable"}</strong><small>{top ? `${playerScore(top, match.players).toFixed(0)} / 100 estimated score` : "No player data"}</small></div>
