@@ -45,6 +45,9 @@ class MatchPlayer(BaseModel):
     kills_log: list[dict[str, Any]] | None = None
     ability_upgrades: list[dict[str, Any]] | None = None
     lane_role: int | None = None
+    position: str | None = None
+    lane: str | None = None
+    role: str | None = None
     is_roaming: bool | None = None
     damage_taken: Any | None = None
     item_uses: dict[str, int] | None = None
