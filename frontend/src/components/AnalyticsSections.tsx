@@ -77,6 +77,9 @@ export interface MatchData {
   lobby_type: number | null;
   human_players: number | null;
   is_parsed: boolean;
+  data_source?: string;
+  replay_age_days?: number | null;
+  replay_analysis_allowed?: boolean;
   players: MatchPlayer[];
   radiant_gold_adv?: number[] | null;
   radiant_xp_adv?: number[] | null;
