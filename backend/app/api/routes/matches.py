@@ -151,7 +151,17 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict, fallback_data
         game_mode=data.get("gameMode"),
         lobby_type=data.get("lobbyType"),
         human_players=len(raw_players),
-        is_parsed=has_playback,
+        is_parsed=(
+            has_playback
+            or bool(fallback_data.get("teamfights"))
+            or bool(fallback_data.get("objectives"))
+            or bool(fallback_data.get("radiant_gold_adv"))
+            or bool(fallback_data.get("radiant_xp_adv"))
+            or any(
+                player.get("purchase_log") or player.get("kills_log")
+                for player in fallback_players
+            )
+        ),
         data_source="stratz+opendota" if fallback_data else "stratz",
         replay_age_days=age_days,
         replay_analysis_allowed=replay_allowed(start_time),
