@@ -1537,3 +1537,5 @@ footer span {
   .mobile-nav button.active{background:#1a2941;color:#8ab6ff}
   .content{padding-bottom:105px}
 }
+
+.sidebar nav{overflow-y:auto;max-height:calc(100vh - 220px);padding-right:3px}
