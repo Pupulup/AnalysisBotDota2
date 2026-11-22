@@ -75,7 +75,7 @@ export default function Guides({ language }: { language: Lang }) {
       })
       .then(setGuide)
       .catch(err => {
-        if (err.name !== "AbortError") setError(err instanceof Error ? err.message : "Could not load hero guide.");
+        if (!(err instanceof Error) || err.name !== "AbortError") setError(err instanceof Error ? err.message : "Could not load hero guide.");
       })
       .finally(() => { if (!controller.signal.aborted) setLoadingGuide(false); });
     return () => controller.abort();
