@@ -31,3 +31,6 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -m compileall -q backend/app
+      - run: python -m unittest discover -s backend/tests -v
+        env:
+          PYTHONPATH: backend
