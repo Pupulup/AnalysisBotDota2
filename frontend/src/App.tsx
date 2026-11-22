@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Swords, ChartNoAxesCombined, Trophy, Activity,
-  ChevronRight, Search, Clock, Shield, RefreshCw, Package, Coins, BrainCircuit, BookOpen
+  ChevronRight, Search, Clock, Shield, RefreshCw, Package, Coins, BrainCircuit, BookOpen, User
 } from "lucide-react";
 import {
   AnalysisSection,
@@ -14,6 +14,7 @@ import {
 import AdvancedAnalytics from "./components/AdvancedAnalytics";
 import DecisionAnalysis from "./components/DecisionAnalysis";
 import Guides from "./components/Guides";
+import PlayerProfile from "./components/PlayerProfile";
 import { I18nProvider, Localize } from "./i18n";
 import type { Language } from "./i18n";
 import "./App.css";
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Items", icon: Package },
   { name: "Economy", icon: Coins },
   { name: "Guides", icon: BookOpen },
+  { name: "Player", icon: User },
   // { name: "Trends", icon: TrendingUp }, // Temporarily hidden; may return later.
 ];
 
@@ -117,7 +119,7 @@ function App() {
   }
 
   function renderActiveSection() {
-    if (!match) return null;
+    if (!match || activeTab === "Player") return null;
     switch (activeTab) {
       case "Timeline":
         return <TimelineSection match={match} />;
@@ -142,6 +144,7 @@ function App() {
     Analysis: "Match Analysis",
     Review: "Match Review",
     Guides: "Hero Guides",
+    Player: "Player Performance",
     Items: "Item Builds",
     Economy: "Economy Analysis",
 
@@ -199,7 +202,7 @@ function App() {
             </div>
           </div>
 
-          <div className="search-panel">
+          {activeTab !== "Player" && <div className="search-panel">
             <Search size={19} />
             <input
               value={matchId}
@@ -213,12 +216,12 @@ function App() {
             <button className="analyze-button" onClick={analyzeMatch} disabled={loading}>
               {loading ? <><RefreshCw size={16} className="spin" />Loading</> : <>Analyze<ChevronRight size={17} /></>}
             </button>
-          </div>
+          </div>}
 
           {error && <div className="error-panel"><Shield size={19} /><span>{error}</span></div>}
           {loading && <div className="loading-panel"><RefreshCw size={24} className="spin" /><span>Loading match data...</span></div>}
 
-          {!match && !loading && !error && activeTab !== "Guides" && (
+          {!match && !loading && !error && activeTab !== "Guides" && activeTab !== "Player" && (
             <div className="empty-state">
               <div className="empty-icon"><Swords size={35} /></div>
               <h2>Ready to analyze</h2>
@@ -227,8 +230,9 @@ function App() {
           )}
 
           {!match && activeTab === "Guides" && <Guides language={language} />}
+          {activeTab === "Player" && <PlayerProfile language={language} />}
 
-          {match && (
+          {match && activeTab !== "Player" && (
             <>
               <div className="section-heading">
                 <div>
