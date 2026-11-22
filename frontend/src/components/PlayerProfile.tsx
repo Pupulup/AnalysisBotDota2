@@ -64,15 +64,28 @@ export default function PlayerProfile({ language }: { language: Lang }) {
 
   async function loadProfile() {
     const id = accountId.trim();
-    if (!/^\d+$/.test(id) || Number(id) <= 0 || Number(id) > 4294967295) {
-      setError(copy(language, "Enter a valid Steam32 account ID.", "Введите корректный Steam32 account ID."));
+    if (!/^\d+$/.test(id)) {
+      setError(copy(language, "Enter a numeric Steam32 or SteamID64.", "Введите числовой Steam32 или SteamID64."));
       return;
     }
+    let normalizedId: bigint;
+    try {
+      normalizedId = BigInt(id);
+      if (normalizedId > 4294967295n) normalizedId -= 76561197960265728n;
+    } catch {
+      setError(copy(language, "Enter a valid Steam account ID.", "Введите корректный Steam account ID."));
+      return;
+    }
+    if (normalizedId <= 0n || normalizedId > 4294967295n) {
+      setError(copy(language, "The account ID is outside the supported range.", "ID аккаунта выходит за поддерживаемый диапазон."));
+      return;
+    }
+    const steam32 = normalizedId.toString();
     setLoading(true);
     setError("");
     setData(null);
     try {
-      const response = await fetch(`/api/players/${id}/analytics?mode=${mode}&limit=${limit}`);
+      const response = await fetch(`/api/players/${steam32}/analytics?mode=${mode}&limit=${limit}`);
       const result = await response.json();
       if (!response.ok) throw new Error(result.detail || copy(language, "Could not load player analytics.", "Не удалось загрузить аналитику игрока."));
       setData(result as PlayerAnalytics);
@@ -110,7 +123,7 @@ export default function PlayerProfile({ language }: { language: Lang }) {
       <div className="player-profile-controls">
         <label>{copy(language, "Steam32 account ID", "Steam32 account ID")}
           <input value={accountId} onChange={e => setAccountId(e.target.value)} onKeyDown={e => { if (e.key === "Enter") void loadProfile(); }} inputMode="numeric" placeholder="e.g. 123456789" />
-          <small>{copy(language, "Use the numeric Steam32 ID, not the 17-digit SteamID64.", "Укажите числовой Steam32 ID, а не 17-значный SteamID64.")}</small>
+          <small>{copy(language, "Use a numeric Steam32 ID or a 17-digit SteamID64.", "Можно указать Steam32 ID или 17-значный SteamID64.")}</small>
         </label>
         <label>{copy(language, "Game mode", "Игровой режим")}
           <select value={mode} onChange={e => setMode(e.target.value as Mode)}>
