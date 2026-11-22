@@ -31,7 +31,7 @@ const navigation = [
   // { name: "Trends", icon: TrendingUp }, // Temporarily hidden; may return later.
 ];
 
-function formatDuration(seconds: number) {
+function modeCategoryLabel(category: string | undefined, language: Language) {\n  const labels: Record<string, [string, string]> = {\n    ranked: ["RANKED", "РЕЙТИНГОВЫЙ"],\n    turbo: ["TURBO", "ТУРБО"],\n    unranked: ["UNRANKED", "ОБЫЧНЫЙ ПОДБОР"],\n    other: ["OTHER MODE", "ДРУГОЙ РЕЖИМ"],\n    unknown: ["UNKNOWN", "НЕИЗВЕСТНО"],\n  };\n  const pair = labels[category || "unknown"] || labels.unknown;\n  return language === "ru" ? pair[1] : pair[0];\n}\n\nfunction formatDuration(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
 }
@@ -254,7 +254,7 @@ function App() {
               </section>
 
               <div className="match-meta">
-                <span>MODE CATEGORY: {(match.mode_category || "unknown").toUpperCase()}</span>
+                <span>MODE CATEGORY: {modeCategoryLabel(match.mode_category, language)}</span>
                 <span>DATA SOURCE: {match.data_source?.toUpperCase() || "OPENDOTA"}</span>
                 {match.replay_age_days !== null && match.replay_age_days !== undefined && (
                   <span>REPLAY AGE: {match.replay_age_days} DAYS</span>
