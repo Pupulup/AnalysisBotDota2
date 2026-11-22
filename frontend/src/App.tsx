@@ -206,13 +206,15 @@ function App() {
           {error && <div className="error-panel"><Shield size={19} /><span>{error}</span></div>}
           {loading && <div className="loading-panel"><RefreshCw size={24} className="spin" /><span>Loading match data...</span></div>}
 
-          {!match && !loading && !error && (
+          {!match && !loading && !error && activeTab !== "Guides" && (
             <div className="empty-state">
               <div className="empty-icon"><Swords size={35} /></div>
               <h2>Ready to analyze</h2>
               <p>Enter a Dota 2 Match ID to load match statistics.</p>
             </div>
           )}
+
+          {!match && activeTab === "Guides" && <Guides language={language} />}
 
           {match && (
             <>
