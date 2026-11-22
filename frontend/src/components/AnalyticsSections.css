@@ -62,3 +62,19 @@
 .analytics-contribution-player small{font-size:8px;color:#8290a5}
 @media(max-width:600px){.analytics-contribution-head,.analytics-contribution-row{padding:9px 10px}}
 @media print{.analytics-contribution-head,.analytics-contribution-row{border-color:#d8dee8!important;color:#263247!important}.analytics-contribution-player strong{color:#172033!important}.analytics-contribution-player small{color:#526176!important}}
+
+.team-metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px}
+.team-metric-card{min-width:0;padding:14px;background:#182333;border:1px solid #2a3a50;border-radius:8px}
+.team-metric-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:13px}
+.team-metric-title>strong{font-size:11px;color:#edf1fa}
+.team-metric-leader{font-size:7px;letter-spacing:.6px;color:#91a0b5;white-space:nowrap}
+.team-metric-leader.radiant{color:#68bd9a}.team-metric-leader.dire{color:#e17c88}
+.team-metric-values{display:flex;justify-content:space-between;gap:12px;margin-bottom:9px;font-size:15px;font-variant-numeric:tabular-nums}
+.radiant-value{color:#68bd9a}.dire-value{color:#e17c88}
+.team-metric-bars{display:flex;flex-direction:column;gap:6px}
+.team-metric-track{height:8px;background:#29374a;border-radius:10px;overflow:hidden}
+.team-metric-track span{display:block;height:100%;min-width:0;border-radius:10px;transition:width .25s ease}
+.team-metric-track .radiant-bar{background:#4d9c83}.team-metric-track .dire-bar{background:#c16b79}
+.team-metric-legend{display:flex;justify-content:space-between;margin-top:8px;font-size:7px;letter-spacing:.8px;color:#8290a5}
+@media(max-width:600px){.team-metric-grid{grid-template-columns:1fr;gap:9px;padding:10px}.team-metric-card{padding:12px}.team-metric-title>strong{font-size:10px}.team-metric-values{font-size:14px}}
+@media print{.team-metric-card{background:#f5f7fa!important;border-color:#d8dee8!important}.team-metric-title>strong{color:#172033!important}.team-metric-track{background:#e5e9ef!important}.team-metric-legend{color:#526176!important}}
