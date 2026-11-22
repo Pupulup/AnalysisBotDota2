@@ -570,7 +570,7 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
     {fightReports.length > 0 && <section className="pdf-report-section">
       <h2>Teamfight contribution</h2>
       {fightReports.map(({ fight, index }) => <div key={index} className="pdf-fight-report">
-        <h3>Fight #{index + 1} · {reportTime(Number(fight.start))} · {Number(fight.deaths || 0)} deaths</h3>
+        <h3>{language === "ru" ? "Сражение" : "Fight"} #{index + 1} · {reportTime(Number(fight.start))} · {Number(fight.deaths || 0)} {language === "ru" ? "смертей" : "deaths"}</h3>
         <table className="pdf-report-table compact">
           <thead><tr><th>Player / Hero</th><th>Team</th><th>Damage</th><th>Healing</th><th>Gold swing</th><th>Deaths</th></tr></thead>
           <tbody>{(Array.isArray(fight.players) ? fight.players : []).map((stats: Record<string, any>, playerIndex: number) => {
