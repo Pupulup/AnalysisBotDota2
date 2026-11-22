@@ -81,7 +81,7 @@ async def main() -> None:
             print(f"- {field_name}: field not present in schema")
             continue
         arguments = sorted(arg.get("name", "") for arg in field.get("args") or [])
-        has_version_filter = any("gameVersion" in name.lower() for name in arguments)
+        has_version_filter = any("gameversion" in name.lower() for name in arguments)
         print(f"- {field_name}: args={', '.join(arguments) or '(none)'}")
         print(f"  explicit game-version filter: {'YES' if has_version_filter else 'NO'}")
 
