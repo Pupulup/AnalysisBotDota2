@@ -10,9 +10,9 @@ export function I18nProvider({ language, children }: { language: Language; child
 export function useLanguage() { return useContext(LanguageContext); }
 
 const dictionary: Record<string, string> = {
-  "WORKSPACE":"РАБОЧАЯ ОБЛАСТЬ","OVERVIEW":"ОБЗОР","PLAYERS":"ИГРОКИ","TIMELINE":"ХРОНОЛОГИЯ","TEAMS":"КОМАНДЫ","ANALYSIS":"АНАЛИЗ","DECISIONS":"РЕШЕНИЯ","FIGHTS":"СРАЖЕНИЯ","ITEMS":"ПРЕДМЕТЫ","ECONOMY":"ЭКОНОМИКА","ROLES":"РОЛИ","TRENDS":"ДИНАМИКА","Overview":"Обзор","Players":"Игроки","Timeline":"Хронология","Teams":"Команды","Analysis":"Анализ","Decisions":"Решения",
-  "Fights":"Сражения","Items":"Предметы","Economy":"Экономика","Roles":"Роли","Trends":"Динамика",
-  "Match Overview":"Обзор матча","Player Statistics":"Статистика игроков","Match Timeline":"Хронология матча","Team Comparison":"Сравнение команд","Match Analysis":"Анализ матча","Decision Analysis":"Анализ решений","Teamfight Analysis":"Анализ командных сражений","Item Builds":"Сборки предметов","Economy Analysis":"Анализ экономики","Role Analysis":"Анализ ролей","Player Trends":"Динамика игрока",
+  "WORKSPACE":"РАБОЧАЯ ОБЛАСТЬ","OVERVIEW":"ОБЗОР","PLAYERS":"ИГРОКИ","TIMELINE":"ХРОНОЛОГИЯ","TEAMS":"КОМАНДЫ","ANALYSIS":"АНАЛИЗ","DECISIONS":"РЕШЕНИЯ","FIGHTS":"СРАЖЕНИЯ","ITEMS":"ПРЕДМЕТЫ","ECONOMY":"ЭКОНОМИКА","ROLES":"РОЛИ","TRENDS":"ДИНАМИКА","Overview":"Обзор","Players":"Игроки","Timeline":"Хронология","Teams":"Команды","Analysis":"Анализ","Decisions":"Решения","Review":"Разбор матча","Guides":"Гайды",
+  "Fights":"Сражения","Items":"Предметы","Economy":"Экономика","Roles":"Роли","Trends":"Динамика","Review":"Разбор матча","Guides":"Гайды",
+  "Match Overview":"Обзор матча","Player Statistics":"Статистика игроков","Match Timeline":"Хронология матча","Team Comparison":"Сравнение команд","Match Analysis":"Анализ матча","Decision Analysis":"Анализ решений","Teamfight Analysis":"Анализ командных сражений","Item Builds":"Сборки предметов","Economy Analysis":"Анализ экономики","Role Analysis":"Анализ ролей","Player Trends":"Динамика игрока","Match Review":"Разбор матча","Hero Guides":"Гайды героев",
   "MATCH CENTER":"ЦЕНТР АНАЛИЗА МАТЧЕЙ","Detailed Dota 2 match analytics platform.":"Платформа подробной аналитики матчей Dota 2.",
   "Enter Dota 2 Match ID...":"Введите ID матча Dota 2...","Analyze":"Анализировать","Loading":"Загрузка","Loading match data...":"Загрузка данных матча...",
   "Ready to analyze":"Готово к анализу","Enter a Dota 2 Match ID to load match statistics.":"Введите ID матча Dota 2, чтобы загрузить статистику.",
