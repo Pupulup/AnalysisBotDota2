@@ -21,6 +21,11 @@ async def get_match(
         except OpenDotaError:
             heroes = {}
 
+        try:
+            items = await opendota.get_items()
+        except OpenDotaError:
+            items = {}
+
         players = []
         for player in raw_players:
             player_data = dict(player)
@@ -29,6 +34,18 @@ async def get_match(
 
             player_data["hero_name"] = hero.get("name", "Unknown Hero")
             player_data["hero_image"] = hero.get("image")
+
+            inventory = []
+            for slot in ("item_0", "item_1", "item_2", "item_3", "item_4", "item_5", "item_neutral"):
+                item_id = player_data.get(slot)
+                if item_id:
+                    item = items.get(int(item_id))
+                    inventory.append({
+                        "id": int(item_id),
+                        "name": item.get("name") if item else f"Item #{item_id}",
+                        "slot": slot,
+                    })
+            player_data["item_inventory"] = inventory
             players.append(player_data)
 
         players.sort(key=lambda player: player.get("player_slot", 0))
