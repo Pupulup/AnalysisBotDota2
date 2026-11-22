@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, RefreshCw, Swords } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import "./Guides.css";
 
 type Hero = { id: number; name: string; image?: string | null };
@@ -15,7 +15,6 @@ type GuideData = {
 type Lang = "en" | "ru";
 
 const copy = (lang: Lang, en: string, ru: string) => lang === "ru" ? ru : en;
-const heroImage = (path?: string | null) => !path ? null : path.startsWith("http") ? path : `https://cdn.cloudflare.steamstatic.com${path}`;
 const itemImage = (key?: string | null) => key ? `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/items/${key.replace(/^item_/, "")}_lg.png` : null;
 
 function PickSelectors({ title, values, heroes, onChange, language }: {
@@ -83,7 +82,6 @@ export default function Guides({ language }: { language: Lang }) {
   }, [heroId, enemyKey]);
 
   const heroById = useMemo(() => new Map(heroes.map(hero => [hero.id, hero])), [heroes]);
-  const selectedHero = heroById.get(heroId);
   const phases = [
     ["starting", copy(language,"Starting items","Стартовые предметы")],
     ["early", copy(language,"Early game","Начало игры")],
