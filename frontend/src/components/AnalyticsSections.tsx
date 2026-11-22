@@ -254,31 +254,42 @@ function teamTotals(players: MatchPlayer[]) {
 }
 
 export function TeamsSection({ match }: { match: MatchData }) {
-  const r = teamTotals(match.players.filter(radiant));
-  const d = teamTotals(match.players.filter(p => !radiant(p)));
-  const rows = [
-    ["Kills", r.kills, d.kills],
-    ["Assists", r.assists, d.assists],
-    ["Net worth", r.netWorth, d.netWorth],
-    ["Hero damage", r.damage, d.damage],
-    ["Tower damage", r.towerDamage, d.towerDamage],
-    ["Hero healing", r.healing, d.healing],
-    ["Last hits", r.lastHits, d.lastHits],
-    ["Average GPM", Math.round(r.gpm / Math.max(match.players.filter(radiant).length, 1)), Math.round(d.gpm / Math.max(match.players.filter(p => !radiant(p)).length, 1))],
-    ["Average XPM", Math.round(r.xpm / Math.max(match.players.filter(radiant).length, 1)), Math.round(d.xpm / Math.max(match.players.filter(p => !radiant(p)).length, 1))]
-  ] as Array<[string, number, number]>;
-  const chartOption = {
-    backgroundColor: "transparent",
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, backgroundColor: "#151e2c", borderColor: "#34445d", textStyle: { color: "#edf1fa" } },
-    legend: { textStyle: { color: "#aab7ca" } },
-    grid: { left: 110, right: 24, top: 42, bottom: 25 },
-    xAxis: { type: "value", axisLabel: { color: "#8290a5" }, splitLine: { lineStyle: { color: "#263246" } } },
-    yAxis: { type: "category", data: rows.map(x => x[0]), axisLabel: { color: "#aab7ca" }, axisLine: { show: false } },
-    series: [
-      { name: "Radiant", type: "bar", data: rows.map(x => x[1]), itemStyle: { color: "#4d9c83" }, barMaxWidth: 13 },
-      { name: "Dire", type: "bar", data: rows.map(x => x[2]), itemStyle: { color: "#c16b79" }, barMaxWidth: 13 }
-    ]
-  };
+  const radiantPlayers = match.players.filter(radiant);
+  const direPlayers = match.players.filter(p => !radiant(p));
+  const r = teamTotals(radiantPlayers);
+  const d = teamTotals(direPlayers);
+  const average = (value: number, count: number) => Math.round(value / Math.max(count, 1));
+
+  const groups = [
+    {
+      title: "Combat statistics",
+      subtitle: "TEAM FIGHT OUTPUT",
+      metrics: [
+        { label: "Kills", radiant: r.kills, dire: d.kills, format: number },
+        { label: "Deaths", radiant: r.deaths, dire: d.deaths, format: number },
+        { label: "Assists", radiant: r.assists, dire: d.assists, format: number }
+      ]
+    },
+    {
+      title: "Economy and farming",
+      subtitle: "TEAM TOTALS AND PER-PLAYER AVERAGES",
+      metrics: [
+        { label: "Net worth", radiant: r.netWorth, dire: d.netWorth, format: number },
+        { label: "Average GPM", radiant: average(r.gpm, radiantPlayers.length), dire: average(d.gpm, direPlayers.length), format: number },
+        { label: "Average XPM", radiant: average(r.xpm, radiantPlayers.length), dire: average(d.xpm, direPlayers.length), format: number },
+        { label: "Last hits", radiant: r.lastHits, dire: d.lastHits, format: number }
+      ]
+    },
+    {
+      title: "Damage and utility",
+      subtitle: "TOTAL TEAM CONTRIBUTION",
+      metrics: [
+        { label: "Hero damage", radiant: r.damage, dire: d.damage, format: number },
+        { label: "Tower damage", radiant: r.towerDamage, dire: d.towerDamage, format: number },
+        { label: "Hero healing", radiant: r.healing, dire: d.healing, format: number }
+      ]
+    }
+  ];
 
   return <div className="analytics-page">
     <div className="analytics-metrics-grid">
@@ -287,13 +298,42 @@ export function TeamsSection({ match }: { match: MatchData }) {
       <Metric label="RADIANT HERO DAMAGE" value={number(r.damage)} icon={Crosshair} />
       <Metric label="DIRE HERO DAMAGE" value={number(d.damage)} icon={Crosshair} />
     </div>
-    <Panel title="Team comparison" subtitle="AGGREGATED MATCH STATISTICS">
-      <div className="analytics-chart"><ReactECharts option={chartOption} style={{ height: 390, width: "100%" }} /></div>
-    </Panel>
+
+    {groups.map(group => (
+      <Panel key={group.title} title={group.title} subtitle={group.subtitle}>
+        <div className="team-metric-grid">
+          {group.metrics.map(metric => {
+            const scale = Math.max(metric.radiant, metric.dire, 1);
+            const radiantWidth = metric.radiant / scale * 100;
+            const direWidth = metric.dire / scale * 100;
+            const leader = metric.radiant === metric.dire ? "tie" : metric.radiant > metric.dire ? "radiant" : "dire";
+            return (
+              <div className="team-metric-card" key={metric.label}>
+                <div className="team-metric-title">
+                  <strong>{metric.label}</strong>
+                  {leader !== "tie" && <span className={`team-metric-leader ${leader}`}>{leader === "radiant" ? "RADIANT LEADS" : "DIRE LEADS"}</span>}
+                  {leader === "tie" && <span className="team-metric-leader">EVEN</span>}
+                </div>
+                <div className="team-metric-values">
+                  <strong className="radiant-value">{metric.format(metric.radiant)}</strong>
+                  <strong className="dire-value">{metric.format(metric.dire)}</strong>
+                </div>
+                <div className="team-metric-bars" aria-label={`${metric.label}: Radiant ${metric.radiant}, Dire ${metric.dire}`}>
+                  <div className="team-metric-track"><span className="radiant-bar" style={{ width: `${radiantWidth}%` }} /></div>
+                  <div className="team-metric-track"><span className="dire-bar" style={{ width: `${direWidth}%` }} /></div>
+                </div>
+                <div className="team-metric-legend"><span>RADIANT</span><span>DIRE</span></div>
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
+    ))}
+
     <Panel title="Team efficiency" subtitle="AVERAGE PER PLAYER">
       <div className="analytics-efficiency">
-        <div><span>RADIANT</span><strong>{Math.round(r.gpm / Math.max(match.players.filter(radiant).length, 1))} GPM</strong><small>{Math.round(r.xpm / Math.max(match.players.filter(radiant).length, 1))} XPM</small></div>
-        <div><span>DIRE</span><strong>{Math.round(d.gpm / Math.max(match.players.filter(p => !radiant(p)).length, 1))} GPM</strong><small>{Math.round(d.xpm / Math.max(match.players.filter(p => !radiant(p)).length, 1))} XPM</small></div>
+        <div><span>RADIANT</span><strong>{average(r.gpm, radiantPlayers.length)} GPM</strong><small>{average(r.xpm, radiantPlayers.length)} XPM</small></div>
+        <div><span>DIRE</span><strong>{average(d.gpm, direPlayers.length)} GPM</strong><small>{average(d.xpm, direPlayers.length)} XPM</small></div>
       </div>
     </Panel>
   </div>;
