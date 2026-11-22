@@ -44,6 +44,8 @@ function App() {
   const [matchId, setMatchId] = useState("");
   const [match, setMatch] = useState<MatchData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [parseLoading, setParseLoading] = useState(false);
+  const [parseMessage, setParseMessage] = useState("");
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("Overview");
   const [selectedPlayer, setSelectedPlayer] = useState<MatchPlayer | null>(null);
@@ -70,6 +72,7 @@ function App() {
 
     setLoading(true);
     setError("");
+    setParseMessage("");
     setMatch(null);
     setSelectedPlayer(null);
 
@@ -85,6 +88,23 @@ function App() {
       setError(err instanceof Error ? err.message : "Неизвестная ошибка.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function requestMatchParse() {
+    if (!match) return;
+    setParseLoading(true);
+    setParseMessage("");
+    setError("");
+    try {
+      const response = await fetch(`${API_URL}/api/matches/${match.match_id}/parse`, { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || "Не удалось отправить запрос на обработку реплея.");
+      setParseMessage("Запрос отправлен в OpenDota. Обработка может занять несколько минут. После завершения нажмите Analyze ещё раз.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось запросить обработку матча.");
+    } finally {
+      setParseLoading(false);
     }
   }
 
@@ -243,8 +263,9 @@ function App() {
               </section>
 
               {!match.is_parsed && (
-                <div className="error-panel"><Shield size={19} /><span>OpenDota has not parsed full player data for this match. Some sections may be incomplete.</span></div>
+                <div className="error-panel"><Shield size={19} /><span>OpenDota has not parsed replay data for this match. Advanced sections require replay parsing.</span><button className="analyze-button" onClick={requestMatchParse} disabled={parseLoading}>{parseLoading ? "Sending..." : "Request replay parsing"}</button></div>
               )}
+              {parseMessage && <div className="loading-panel"><span>{parseMessage}</span></div>}
 
               {renderActiveSection()}
 
