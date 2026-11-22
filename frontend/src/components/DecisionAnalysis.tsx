@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { MatchData, MatchPlayer } from "./AnalyticsSections";
 import { playerName } from "./AnalyticsSections";
 import "./DecisionAnalysis.css";
@@ -15,7 +16,7 @@ const clock = (seconds: number) => {
 const radiant = (player: MatchPlayer) => player.player_slot < 128;
 const teamName = (isRadiant: boolean, lang: Lang) => copy(lang, isRadiant ? "Radiant" : "Dire", isRadiant ? "Свет" : "Тьма");
 
-function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return <section className="analytics-panel decision-panel">
     <div className="analytics-panel-heading"><div><h2>{title}</h2>{subtitle && <span>{subtitle}</span>}</div></div>
     {children}
@@ -99,7 +100,7 @@ function DecisionAnalysis({ match, language }: Props) {
     return { player, fightDeaths, fightDamage, earlyPurchases, purchaseCount: meaningfulPurchases.length };
   }).sort((a, b) => b.fightDeaths - a.fightDeaths);
 
-  const purchaseRows = players.flatMap(player =>
+  const allPurchaseCount = players.reduce((sum, player) => sum + (Array.isArray(player.purchase_log) ? player.purchase_log.length : 0), 0);\n  const purchaseRows = players.flatMap(player =>
     (Array.isArray(player.purchase_log) ? player.purchase_log : [])
       .filter((item: Record<string, any>) => Number(item.time) >= 0 && Number(item.time) <= match.duration)
       .map((item: Record<string, any>) => ({ player, item, time: Number(item.time) || 0 }))
@@ -118,7 +119,7 @@ function DecisionAnalysis({ match, language }: Props) {
         <div><span>{copy(language, "Teamfights", "Сражения")}</span><strong>{fights.length}</strong></div>
         <div><span>{copy(language, "Objectives", "Объекты")}</span><strong>{objectives.length}</strong></div>
         <div><span>{copy(language, "Fight deaths", "Смерти в сражениях")}</span><strong>{fmt(fightRows.reduce((sum, fight) => sum + fight.radiantDeaths + fight.direDeaths, 0))}</strong></div>
-        <div><span>{copy(language, "Purchase events", "Покупки")}</span><strong>{fmt(purchaseRows.length)}</strong></div>
+        <div><span>{copy(language, "Purchase events", "Покупки")}</span><strong>{fmt(allPurchaseCount)}</strong></div>
       </div>
     </Panel>
 
