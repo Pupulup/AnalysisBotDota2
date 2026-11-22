@@ -34,6 +34,9 @@ class MatchPlayer(BaseModel):
     tower_kills: int | None = None
     roshan_kills: int | None = None
     buyback_count: int | None = None
+    camps_stacked: int | None = None
+    rune_pickups: int | None = None
+    firstblood_claimed: int | None = None
     times: list[int] | None = None
     gold_t: list[int] | None = None
     xp_t: list[int] | None = None
