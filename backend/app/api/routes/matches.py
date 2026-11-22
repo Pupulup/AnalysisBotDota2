@@ -67,6 +67,9 @@ def normalize_stratz_match(data: dict, match_id: int, items: dict) -> MatchRespo
             "last_hits": raw.get("numLastHits") or 0,
             "denies": raw.get("numDenies") or 0,
             "net_worth": raw.get("networth") or 0,
+            "hero_damage": raw.get("heroDamage") or 0,
+            "tower_damage": raw.get("towerDamage") or 0,
+            "hero_healing": raw.get("heroHealing") or 0,
             "level": raw.get("level") or 0,
         }
 
