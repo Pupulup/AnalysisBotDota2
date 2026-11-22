@@ -14,7 +14,7 @@ import {
   TeamsSection
 } from "./components/AnalyticsSections";
 import AdvancedAnalytics from "./components/AdvancedAnalytics";
-import { Language, Localize } from "./i18n";
+import { I18nProvider, Language, Localize } from "./i18n";
 import "./App.css";
 
 const API_URL = "";
@@ -45,12 +45,12 @@ function App() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [selectedPlayer, setSelectedPlayer] = useState<MatchPlayer | null>(null);
   const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem("dota-analytics-language");
-    return saved === "ru" ? "ru" : "en";
+    try { return localStorage.getItem("dota-analytics-language") === "ru" ? "ru" : "en"; }
+    catch { return "en"; }
   });
 
   useEffect(() => {
-    localStorage.setItem("dota-analytics-language", language);
+    try { localStorage.setItem("dota-analytics-language", language); } catch { /* storage may be unavailable */ }
     document.documentElement.lang = language;
   }, [language]);
 
@@ -101,7 +101,7 @@ function App() {
       case "Economy":
       case "Roles":
       case "Trends":
-        return <AdvancedAnalytics match={match} language={language} section={activeTab} />;
+        return <AdvancedAnalytics match={match} language={language} section={activeTab as "Fights" | "Items" | "Economy" | "Roles" | "Trends"} />;
       case "Overview":
       default:
         return <OverviewSection match={match} />;
@@ -122,6 +122,7 @@ function App() {
   };
 
   return (
+    <I18nProvider language={language}>
     <Localize language={language}>
     <div className="app">
       <aside className="sidebar">
@@ -151,6 +152,9 @@ function App() {
         </nav>
         <div className="sidebar-footer"><div className="status-dot" />API SYSTEM ONLINE</div>
       </aside>
+      <nav className="mobile-nav" aria-label="Main navigation">
+        {navigation.map(item => { const Icon = item.icon; return <button key={item.name} className={activeTab === item.name ? "active" : ""} onClick={() => { setActiveTab(item.name); setSelectedPlayer(null); }}><Icon size={17}/><span>{item.name}</span></button>; })}
+      </nav>
 
       <main className="main">
         <header className="topbar">
@@ -257,6 +261,7 @@ function App() {
       </main>
     </div>
     </Localize>
+    </I18nProvider>
   );
 }
 
