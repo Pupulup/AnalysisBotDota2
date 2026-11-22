@@ -1,12 +1,13 @@
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import httpx
 from dotenv import load_dotenv
 
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
 
 STRATZ_API_URL = "https://api.stratz.com/graphql"
 

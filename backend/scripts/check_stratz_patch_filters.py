@@ -6,7 +6,7 @@ import httpx
 from dotenv import load_dotenv
 
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
 ENDPOINT = "https://api.stratz.com/graphql"
 FIELDS = {
@@ -41,10 +41,45 @@ def named_type(type_info: dict | None) -> str | None:
     return None
 
 
-async def graphql(client: httpx.AsyncClient, query: str, headers: dict) -> dict:
+def describe_http_error(response: httpx.Response, token: str) -> str:
+    metadata = [
+        f"HTTP status: {response.status_code}",
+        f"Content-Type: {response.headers.get('content-type', 'unknown')}",
+        f"Server: {response.headers.get('server', 'unknown')}",
+        f"CF-Ray: {response.headers.get('cf-ray', 'not present')}",
+        f"Request ID: {response.headers.get('x-request-id', 'not present')}",
+    ]
+    body = response.text[:800].replace(token, "[REDACTED]")
+    if body:
+        metadata.append(f"Response preview: {body}")
+    return "\n".join(metadata)
+
+
+async def graphql(
+    client: httpx.AsyncClient,
+    query: str,
+    headers: dict,
+    token: str,
+) -> dict:
     response = await client.post(ENDPOINT, headers=headers, json={"query": query})
-    if response.status_code in (401, 403):
-        raise SystemExit("STRATZ rejected the configured API token.")
+    if response.status_code == 401:
+        details = describe_http_error(response, token)
+        raise SystemExit(
+            "STRATZ returned HTTP 401. The token may be invalid, expired or unauthorized.\n"
+            f"{details}"
+        )
+    if response.status_code == 403:
+        details = describe_http_error(response, token)
+        raise SystemExit(
+            "STRATZ returned HTTP 403. This does not always mean the token is invalid; "
+            "the request may be blocked by an access policy or network protection.\n"
+            f"{details}"
+        )
+    if response.status_code == 429:
+        raise SystemExit("STRATZ rate limit reached (HTTP 429).")
+    if response.status_code >= 400:
+        details = describe_http_error(response, token)
+        raise SystemExit(f"STRATZ returned an HTTP error.\n{details}")
     response.raise_for_status()
     payload = response.json()
     if payload.get("errors"):
@@ -64,7 +99,7 @@ async def main() -> None:
         "User-Agent": "DotaAnalytics/1.0",
     }
     async with httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=10.0)) as client:
-        root_data = await graphql(client, ROOT_QUERY, headers)
+        root_data = await graphql(client, ROOT_QUERY, headers, token)
         root_type_name = ((root_data.get("__schema") or {}).get("queryType") or {}).get("name")
         if not root_type_name:
             raise SystemExit("STRATZ did not expose the GraphQL root query type.")
@@ -79,7 +114,7 @@ async def main() -> None:
           }}
         }}
         '''
-        root_fields = ((await graphql(client, root_query, headers)).get("__type") or {}).get("fields") or []
+        root_fields = ((await graphql(client, root_query, headers, token)).get("__type") or {}).get("fields") or []
         hero_stats_field = next((field for field in root_fields if field.get("name") == "heroStats"), None)
         hero_stats_type = named_type((hero_stats_field or {}).get("type"))
         if not hero_stats_type:
@@ -98,7 +133,7 @@ async def main() -> None:
           }}
         }}
         '''
-        hero_fields = ((await graphql(client, hero_query, headers)).get("__type") or {}).get("fields") or []
+        hero_fields = ((await graphql(client, hero_query, headers, token)).get("__type") or {}).get("fields") or []
 
     fields = {field.get("name"): field for field in hero_fields}
     print("STRATZ HeroStats filter support")
