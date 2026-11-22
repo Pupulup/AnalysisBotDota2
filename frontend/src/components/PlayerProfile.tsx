@@ -28,7 +28,7 @@ type PlayerAnalytics = {
 const copy = (lang: Lang, en: string, ru: string) => lang === "ru" ? ru : en;
 const number = (value: number | null | undefined, digits = 0) =>
   value == null ? "—" : new Intl.NumberFormat("en-US", { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(value);
-const dateLabel = (timestamp: number) =>
+const dateLabel = (timestamp: number | null | undefined) =>
   timestamp ? new Date(timestamp * 1000).toLocaleDateString() : "—";
 const rankLabel = (tier?: number | null) => {
   if (!tier) return "—";
