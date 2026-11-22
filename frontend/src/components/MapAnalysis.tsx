@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import ReactECharts from "echarts-for-react";
 import type { MatchData, MatchPlayer } from "./AnalyticsSections";
 import { playerName } from "./AnalyticsSections";
@@ -8,7 +9,7 @@ type Lang = "en" | "ru";
 const copy = (lang: Lang, en: string, ru: string) => lang === "ru" ? ru : en;
 const radiant = (player: MatchPlayer) => player.player_slot < 128;
 
-function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return <section className="analytics-panel map-analysis-panel">
     <div className="analytics-panel-heading"><div><h2>{title}</h2>{subtitle && <span>{subtitle}</span>}</div></div>
     {children}
