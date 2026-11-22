@@ -106,12 +106,41 @@ query HeroGuide($heroId: Short!, $matchLimit: Int!) {
           matchCount
           winCount
           synergy
+          winRateHeroId1
+          winRateHeroId2
+          winsAverage
         }
         vs {
           heroId2
           matchCount
           winCount
           synergy
+          winRateHeroId1
+          winRateHeroId2
+          winsAverage
+        }
+      }
+      disadvantage {
+        heroId
+        matchCountWith
+        matchCountVs
+        with {
+          heroId2
+          matchCount
+          winCount
+          synergy
+          winRateHeroId1
+          winRateHeroId2
+          winsAverage
+        }
+        vs {
+          heroId2
+          matchCount
+          winCount
+          synergy
+          winRateHeroId1
+          winRateHeroId2
+          winsAverage
         }
       }
     }
