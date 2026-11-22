@@ -54,6 +54,43 @@ query GetMatch($matchId: Long!) {
 }
 """
 
+GUIDE_QUERY = """
+query HeroGuide($heroId: Short!) {
+  heroStats {
+    startingItems: itemFullPurchase(heroId: $heroId, minTime: 0, maxTime: 0) {
+      matchCount
+      winCount
+      itemId
+    }
+    earlyItems: itemFullPurchase(heroId: $heroId, minTime: 1, maxTime: 15) {
+      matchCount
+      winCount
+      itemId
+    }
+    midItems: itemFullPurchase(heroId: $heroId, minTime: 16, maxTime: 30) {
+      matchCount
+      winCount
+      itemId
+    }
+    lateItems: itemFullPurchase(heroId: $heroId, minTime: 31) {
+      matchCount
+      winCount
+      itemId
+    }
+    talents: talent(heroId: $heroId) {
+      matchCount
+      winCount
+      abilityId
+    }
+    abilities: ability(heroId: $heroId) {
+      matchCount
+      winCount
+      abilityId
+    }
+  }
+}
+"""
+
 PLAYBACK_QUERY = """
 query GetMatchPlayback($matchId: Long!) {
   match(id: $matchId) {
@@ -83,7 +120,7 @@ class StratzClient:
     def enabled(self) -> bool:
         return bool(self.api_key)
 
-    async def _graphql(self, query: str, match_id: int) -> dict[str, Any]:
+    async def _graphql(self, query: str, variables: int | dict[str, Any]) -> dict[str, Any]:
         if not self.enabled:
             raise StratzError("STRATZ_API_KEY не настроен.")
 
@@ -98,7 +135,7 @@ class StratzClient:
                 response = await client.post(
                     STRATZ_API_URL,
                     headers=headers,
-                    json={"query": query, "variables": {"matchId": match_id}},
+                    json={"query": query, "variables": variables if isinstance(variables, dict) else {"matchId": variables}},
                 )
             if response.status_code == 401 or response.status_code == 403:
                 raise StratzError("STRATZ отклонил API-токен. Проверь STRATZ_API_KEY.")
@@ -146,6 +183,12 @@ class StratzClient:
                 except ValueError:
                     return None
         return None
+
+    async def get_hero_guide(self, hero_id: int) -> dict[str, Any]:
+        if not self.enabled:
+            raise StratzError("STRATZ_API_KEY не настроен.")
+        data = await self._graphql(GUIDE_QUERY, {"heroId": hero_id})
+        return data
 
     async def get_match(self, match_id: int, include_playback: bool = True) -> dict[str, Any]:
         match = await self._graphql(MATCH_QUERY, match_id)
