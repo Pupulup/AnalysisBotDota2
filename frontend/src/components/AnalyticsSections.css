@@ -126,3 +126,7 @@
 }
 
 @media print{.match-pdf-report .pdf-report-footer{display:block!important}}
+
+.pdf-player-progression{margin-top:9px}
+.pdf-player-progression h4{font-size:8pt;color:#263b58;margin:5px 0}
+@media print{.pdf-player-progression{break-inside:avoid}}
