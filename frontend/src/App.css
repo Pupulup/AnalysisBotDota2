@@ -1529,3 +1529,11 @@ footer span {
 .language-switcher{display:flex;align-items:center;gap:7px;color:#8190a6;font-size:9px;letter-spacing:1px}
 .language-switcher select{background:#141d2a;border:1px solid #35445b;border-radius:5px;color:#dce7f6;padding:7px 9px;font-size:10px;cursor:pointer}
 @media(max-width:600px){.topbar-actions{gap:7px}.language-switcher span{display:none}.language-switcher select{padding:6px 7px}.version{padding:5px 7px}}
+
+.mobile-nav{display:none}
+@media(max-width:600px){
+  .mobile-nav{position:fixed;z-index:50;left:0;right:0;bottom:0;display:flex;gap:4px;overflow-x:auto;background:rgba(14,19,29,.97);border-top:1px solid #2b374b;padding:7px 8px calc(7px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
+  .mobile-nav button{flex:0 0 auto;min-width:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;border-radius:7px;background:transparent;color:#8190a6;padding:6px 8px;font-size:8px}
+  .mobile-nav button.active{background:#1a2941;color:#8ab6ff}
+  .content{padding-bottom:105px}
+}
