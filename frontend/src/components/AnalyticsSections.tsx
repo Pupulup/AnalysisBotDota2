@@ -63,6 +63,7 @@ export interface MatchPlayer {
   item_4?: number | null;
   item_5?: number | null;
   item_neutral?: number | null;
+  item_inventory?: Array<{ id: number; name: string; slot: string }> | null;
 }
 
 export interface MatchData {
