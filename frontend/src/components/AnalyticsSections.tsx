@@ -379,8 +379,8 @@ function reportTime(value?: number | null) {
 }
 
 function reportDate(value?: number | null) {
-  if (!value) return "—";
-  return new Date(value * 1000).toISOString().replace("T", " ").slice(0, 16) + " UTC";
+  if (value == null || !Number.isFinite(Number(value)) || Number(value) <= 0) return "—";
+  return new Date(Number(value) * 1000).toISOString().replace("T", " ").slice(0, 16) + " UTC";
 }
 
 function readableKey(value?: string | null) {
@@ -390,6 +390,36 @@ function readableKey(value?: string | null) {
 
 function ReportMetric({ label, value }: { label: string; value: string | number }) {
   return <div className="pdf-report-metric"><span>{label}</span><strong>{value}</strong></div>;
+}
+function optionalNumber(value?: number | null) {
+  return value == null ? "—" : number(value);
+}
+
+function PlayerProgression({ player }: { player: MatchPlayer }) {
+  const times = player.times || [];
+  const progression = times
+    .map((time, index) => ({ time, index }))
+    .filter(({ time, index }) =>
+      index === 0 ||
+      index === times.length - 1 ||
+      Math.floor(time / 300) > Math.floor((times[index - 1] ?? 0) / 300)
+    );
+
+  if (!progression.length) return <p className="pdf-report-note">No player progression series available.</p>;
+
+  return <div className="pdf-player-progression">
+    <h4>Player progression · 5-minute intervals</h4>
+    <table className="pdf-report-table compact">
+      <thead><tr><th>Time</th><th>Gold</th><th>Experience</th><th>Last hits</th></tr></thead>
+      <tbody>{progression.map(({ time, index }) => <tr key={index}>
+        <td>{reportTime(time)}</td>
+        <td>{optionalNumber(player.gold_t?.[index])}</td>
+        <td>{optionalNumber(player.xp_t?.[index])}</td>
+        <td>{optionalNumber(player.lh_t?.[index])}</td>
+      </tr>)}</tbody>
+    </table>
+    <p className="pdf-report-note">Values are cumulative snapshots supplied by OpenDota; unavailable fields are shown as —.</p>
+  </div>;
 }
 
 function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlayer[] }) {
@@ -465,17 +495,19 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
           <ReportMetric label="KDA" value={kda(p).toFixed(2)} />
           <ReportMetric label="GPM / XPM" value={`${p.gold_per_min} / ${p.xp_per_min}`} />
           <ReportMetric label="Net worth" value={number(p.net_worth)} />
-          <ReportMetric label="Total gold / XP" value={`${number(p.total_gold ?? 0)} / ${number(p.total_xp ?? 0)}`} />
+          <ReportMetric label="Total gold / XP" value={`${optionalNumber(p.total_gold)} / ${optionalNumber(p.total_xp)}`} />
           <ReportMetric label="Last hits / denies" value={`${p.last_hits} / ${p.denies}`} />
           <ReportMetric label="Hero damage" value={number(p.hero_damage)} />
           <ReportMetric label="Tower damage" value={number(p.tower_damage)} />
           <ReportMetric label="Healing" value={number(p.hero_healing)} />
           <ReportMetric label="Teamfight participation" value={p.teamfight_participation == null ? "—" : `${(p.teamfight_participation * 100).toFixed(1)}%`} />
-          <ReportMetric label="Stuns" value={Number(p.stuns || 0).toFixed(1)} />
-          <ReportMetric label="Wards O / S" value={`${p.obs_placed ?? 0} / ${p.sen_placed ?? 0}`} />
-          <ReportMetric label="Tower / Roshan kills" value={`${p.tower_kills ?? 0} / ${p.roshan_kills ?? 0}`} />
-          <ReportMetric label="Buybacks" value={p.buyback_count ?? 0} />
+          <ReportMetric label="Stuns" value={p.stuns == null ? "—" : Number(p.stuns).toFixed(1)} />
+          <ReportMetric label="Wards O / S" value={`${optionalNumber(p.obs_placed)} / ${optionalNumber(p.sen_placed)}`} />
+          <ReportMetric label="Tower / Roshan kills" value={`${optionalNumber(p.tower_kills)} / ${optionalNumber(p.roshan_kills)}`} />
+          <ReportMetric label="Buybacks" value={optionalNumber(p.buyback_count)} />
         </div>
+
+        <PlayerProgression player={p} />
 
         <div className="pdf-player-logs">
           <div><h4>Item purchase log</h4>

@@ -124,3 +124,9 @@
   .pdf-report-table.compact th,.pdf-report-table.compact td{padding:3px 4px}
   .pdf-report-footer{border-top:1px solid #cbd3df;padding-top:7px;margin-top:18px;color:#66758a;font-size:6.5pt}
 }
+
+@media print{.match-pdf-report .pdf-report-footer{display:block!important}}
+
+.pdf-player-progression{margin-top:9px}
+.pdf-player-progression h4{font-size:8pt;color:#263b58;margin:5px 0}
+@media print{.pdf-player-progression{break-inside:avoid}}
