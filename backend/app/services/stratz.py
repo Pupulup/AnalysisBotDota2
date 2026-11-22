@@ -31,6 +31,9 @@ query GetMatch($matchId: Long!) {
       deaths
       assists
       networth
+      heroDamage
+      towerDamage
+      heroHealing
       goldPerMinute
       experiencePerMinute
       numLastHits
@@ -148,8 +151,8 @@ class StratzClient:
         match = await self._graphql(MATCH_QUERY, match_id)
         start_time = self.timestamp(match.get("startDateTime"))
         if include_playback and start_time is not None:
-            age_seconds = max(0, int(datetime.now(timezone.utc).timestamp()) - start_time)
-            if age_seconds <= 90 * 24 * 60 * 60:
+            age_seconds = int(datetime.now(timezone.utc).timestamp()) - start_time
+            if 0 <= age_seconds <= 90 * 24 * 60 * 60:
                 playback_match = await self._graphql(PLAYBACK_QUERY, match_id)
                 playback_players = playback_match.get("players") or []
                 playback_by_account = {
