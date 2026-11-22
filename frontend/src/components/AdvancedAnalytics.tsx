@@ -76,27 +76,28 @@ function ItemsSection({ match, language }: Props) {
   const [selected, setSelected] = useState("all");
   const players = selected === "all" ? match.players : match.players.filter(p=>String(p.player_slot)===selected);
   const inventory = (p: MatchPlayer) => p.item_inventory?.length ? p.item_inventory : [];
-  const logs = players.flatMap(p=>(p.purchase_log||[]).map(entry=>({p,entry}))).sort((a,b)=>(a.entry.time||0)-(b.entry.time||0));
+  const acquiredAt = (p: MatchPlayer, item: { id: number; key?: string | null }) => {
+    const matching = (p.purchase_log || []).filter(entry =>
+      (entry.item_id != null && Number(entry.item_id) === Number(item.id)) ||
+      (!!entry.key && !!item.key && cleanKey(entry.key) === cleanKey(item.key))
+    );
+    if (!matching.length) return null;
+    const latest = matching.reduce((a, b) => Number(a.time || 0) >= Number(b.time || 0) ? a : b);
+    return Number.isFinite(Number(latest.time)) ? mmss(Number(latest.time)) : null;
+  };
   return <div className="analytics-page">
-    <Panel title={copy(language,"Item builds and purchase timing","Сборки и время покупки предметов")} subtitle={copy(language,"PURCHASE EVENTS · STRATZ PLAYBACK / OPENDOTA FALLBACK","СОБЫТИЯ ПОКУПОК · STRATZ PLAYBACK / РЕЗЕРВ OPENDOTA")}>
+    <Panel title={copy(language,"Current item inventory","Текущий инвентарь предметов")} subtitle={copy(language,"RECORDED ITEMS · ITEM IMAGES","ЗАПИСАННЫЕ ПРЕДМЕТЫ · ИКОНКИ ПРЕДМЕТОВ")}>
       <div className="advanced-toolbar"><label>{copy(language,"Player","Игрок")}</label><select value={selected} onChange={e=>setSelected(e.target.value)}><option value="all">{copy(language,"All players","Все игроки")}</option>{match.players.map(p=><option key={p.player_slot} value={String(p.player_slot)}>{playerName(p)}</option>)}</select></div>
       <div className="advanced-item-grid">{players.map(p=><article className="advanced-item-player" key={p.player_slot}>
         <div className="advanced-player-label">{p.hero_image?<img src={p.hero_image} alt={heroName(p)}/>:null}<div><strong>{playerName(p)}</strong><small>{heroName(p)} · {radiant(p)?copy(language,"Radiant","Свет"):copy(language,"Dire","Тьма")}</small></div></div>
         <div className="advanced-inventory"><b>{copy(language,"Recorded inventory","Текущий инвентарь")}</b>
-          {inventory(p).length ? <div className="item-icon-row">{inventory(p).map((item,i)=><div className="item-icon-wrap" key={item.slot || i} title={item.name}>{item.key && <img src={itemImage(item.key) || ""} alt={item.name}/>}<span>{item.name}</span></div>)}
+          {inventory(p).length ? <div className="item-icon-row">{inventory(p).map((item,i)=><div className="item-icon-wrap" key={item.slot || i} title={item.name}>{item.key && <img src={itemImage(item.key) || ""} alt={item.name}/>}<div><span>{item.name}</span><small>{acquiredAt(p,item) || copy(language,"Time unavailable","Время неизвестно")}</small></div></div>)}
           </div> : <span>{copy(language,"Not provided","Нет данных")}</span>}
         </div>
-        <div className="advanced-purchases">{(p.purchase_log||[]).length?(p.purchase_log||[]).map((entry,i)=><div className="purchase-icon-row" key={i}>
-          <time>{mmss(Number(entry.time)||0)}</time>{itemImage(entry.key) && <img src={itemImage(entry.key) || ""} alt="" loading="lazy"/>}<span>{cleanKey(entry.key||"unknown")}</span>
-        </div>):<small>{copy(language,"No purchase log available.","История покупок недоступна.")}</small>}</div>
+
       </article>)}</div>
     </Panel>
-    <Panel title={copy(language,"Purchase timeline","Хронология покупок")} subtitle={copy(language,"ALL SELECTED PLAYERS · CHRONOLOGICAL ORDER","ВЫБРАННЫЕ ИГРОКИ · ПО ВРЕМЕНИ")}>
-      {logs.length?<div className="advanced-purchase-timeline">{logs.map((x,i)=><div key={i}>
-        <time>{mmss(Number(x.entry.time)||0)}</time><strong>{playerName(x.p)}</strong>{itemImage(x.entry.key) && <img src={itemImage(x.entry.key) || ""} alt="" loading="lazy"/>}<span>{cleanKey(x.entry.key||"unknown")}</span>
-      </div>)}</div>:<div className="analytics-empty">{copy(language,"No purchase events are available for the selected players.","Для выбранных игроков нет данных о покупках.")}</div>}
-    </Panel>
-    <p className="advanced-note">{copy(language,"Item icons are loaded from the Dota 2 item image catalogue. Purchase timing is descriptive and does not by itself establish item effectiveness.","Иконки загружаются из каталога изображений предметов Dota 2. Время покупки само по себе не доказывает эффективность предмета.")}</p>
+    <p className="advanced-note">{copy(language,"The panel shows the inventory recorded for each player at the end of the match. A separate purchase chronology is intentionally omitted to avoid repeating item timing information.","Показан инвентарь, зафиксированный у каждого игрока на момент окончания матча. Отдельная хронология покупок скрыта, чтобы не дублировать информацию о предметах и времени их появления.")}</p>
   </div>;
 }
 

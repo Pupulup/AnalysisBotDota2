@@ -88,6 +88,22 @@ export default function Guides({ language }: { language: Lang }) {
   }, [heroId, enemyKey, allyKey]);
 
   const heroById = useMemo(() => new Map(heroes.map(hero => [hero.id, hero])), [heroes]);
+  const draftItemCandidates = useMemo(() => {
+    const byId = new Map<number, ItemStat>();
+    for (const phase of ["early", "mid", "late"]) {
+      for (const item of guide?.build?.[phase] || []) {
+        if (!item.win_rate || item.matches <= 0) continue;
+        const current = byId.get(item.item_id);
+        if (!current || (item.adjusted_win_rate ?? item.win_rate ?? 0) > (current.adjusted_win_rate ?? current.win_rate ?? 0)) {
+          byId.set(item.item_id, item);
+        }
+      }
+    }
+    return [...byId.values()]
+      .sort((a, b) => (b.adjusted_win_rate ?? b.win_rate ?? 0) - (a.adjusted_win_rate ?? a.win_rate ?? 0) || b.matches - a.matches)
+      .slice(0, 8);
+  }, [guide]);
+
   const phases = [
     ["starting", copy(language,"Starting items","Стартовые предметы")],
     ["early", copy(language,"Early game","Начало игры")],
@@ -156,6 +172,32 @@ export default function Guides({ language }: { language: Lang }) {
           const enemy=heroById.get(row.hero_id);
           return <div className="guide-matchup-row" key={row.hero_id}><span>{enemy?.name || `Hero #${row.hero_id}`}</span><b>{row.win_rate == null ? "—" : `${row.win_rate.toFixed(1)}%`}</b><small>{row.edge == null ? "" : `Edge ${row.edge > 0 ? "+" : ""}${row.edge.toFixed(2)} · `}{row.games.toLocaleString()} {copy(language,"matches","матчей")}</small></div>;
         })}</div> : <p className="guide-empty">{copy(language,"Choose enemy heroes to see matchup statistics.","Выберите героев противника, чтобы увидеть статистику матчапов.")}</p>}
+      </section>
+
+      <section className="analytics-panel">
+        <div className="analytics-panel-heading"><div><h2>{copy(language,"Item statistics and draft context","Статистика предметов и контекст драфта")}</h2><span>{copy(language,"HERO ITEM PERFORMANCE + SELECTED MATCHUP CONTEXT","СТАТИСТИКА ПРЕДМЕТОВ ГЕРОЯ + КОНТЕКСТ МАТЧАПОВ")}</span></div></div>
+        {draftItemCandidates.length ? <div className="guide-build-grid">
+          <article className="guide-phase">
+            <h3>{copy(language,"Items with the strongest hero statistics","Предметы с лучшей статистикой героя")}</h3>
+            {draftItemCandidates.map(item => <div className="guide-item-row" key={item.item_id}>
+              {itemImage(item.key) ? <img src={itemImage(item.key) || ""} alt="" loading="lazy"/> : <span className="guide-item-placeholder">{item.item_id}</span>}
+              <div><strong>{item.name}</strong><small>{item.matches.toLocaleString()} {copy(language,"matches","матчей")} · {copy(language,"hero win rate","винрейт героя")} {item.win_rate == null ? "—" : item.win_rate.toFixed(1)+"%"}</small></div>
+              <b>{item.adjusted_win_rate == null ? "—" : item.adjusted_win_rate.toFixed(1)+"%"}</b>
+            </div>)}
+          </article>
+          <article className="guide-phase">
+            <h3>{copy(language,"How the enemy draft changes the reading","Как учитывать пики противника")}</h3>
+            {guide.enemy_matchups?.length ? guide.enemy_matchups.map(row => {
+              const enemy = heroById.get(row.hero_id);
+              return <div className="guide-matchup-row" key={row.hero_id}>
+                <span>{enemy?.name || `Hero #${row.hero_id}`}</span>
+                <b>{row.win_rate == null ? "—" : row.win_rate.toFixed(1)+"%"}</b>
+                <small>{row.games.toLocaleString()} {copy(language,"matches","матчей")}</small>
+              </div>;
+            }) : <p className="guide-empty">{copy(language,"Select enemy heroes to load matchup context.","Выберите героев противника, чтобы загрузить контекст матчапов.")}</p>}
+          </article>
+        </div> : <p className="guide-empty">{copy(language,"No item win-rate sample is available for this hero.","Для этого героя нет выборки винрейта предметов.")}</p>}
+        <p className="guide-note">{copy(language,"The shortlist is ranked by this hero’s item win rate, adjusted toward the hero’s baseline and accompanied by sample size. Enemy matchup statistics provide draft context, but STRATZ does not expose item-specific win rates against each selected enemy in this response. Therefore these are evidence-based candidates, not guaranteed counters.","Список ранжируется по винрейту предметов на этом герое с поправкой на базовый винрейт героя и с указанием размера выборки. Статистика матчапов добавляет контекст драфта, однако в текущем ответе STRATZ не предоставляет винрейты конкретных предметов против каждого выбранного противника. Поэтому это статистически обоснованные кандидаты, а не гарантированные контрпредметы.")}</p>
       </section>
     </>}
   </div>;
