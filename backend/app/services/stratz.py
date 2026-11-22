@@ -249,6 +249,8 @@ class StratzClient:
     def __init__(self):
         self.api_key = os.getenv("STRATZ_API_KEY", "").strip()
         self.timeout = httpx.Timeout(25.0, connect=10.0)
+        self._game_version_cache = None
+        self._game_version_cache_time = 0
 
     @property
     def enabled(self) -> bool:
@@ -318,6 +320,12 @@ class StratzClient:
         return None
 
     async def get_current_game_version(self) -> dict[str, Any]:
+        if (
+            self._game_version_cache is not None
+            and datetime.now(timezone.utc).timestamp() - self._game_version_cache_time < 3600
+        ):
+            return self._game_version_cache
+
         data = await self._graphql(CURRENT_GAME_VERSION_QUERY, {})
         versions = (data.get("constants") or {}).get("gameVersions") or []
         valid = [
@@ -331,12 +339,15 @@ class StratzClient:
             valid,
             key=lambda version: self.timestamp(version.get("asOfDateTime")) or 0,
         )
-        return {
+        result = {
             "id": int(latest["id"]),
             "name": latest.get("name") or f"Game version #{latest['id']}",
             "date": latest.get("asOfDateTime"),
             "source": "stratz",
         }
+        self._game_version_cache = result
+        self._game_version_cache_time = datetime.now(timezone.utc).timestamp()
+        return result
 
     async def get_player_profile(self, account_id: int) -> dict[str, Any]:
         data = await self._graphql(
