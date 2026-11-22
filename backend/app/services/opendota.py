@@ -81,6 +81,14 @@ class OpenDotaClient:
             raise OpenDotaError(data.get("err") or "OpenDota не смогла поставить матч в очередь обработки.", 502)
         return data
 
+    async def get_abilities(self) -> dict:
+        data = await self._request("constants/abilities")
+        return data if isinstance(data, dict) else {}
+
+    async def get_ability_ids(self) -> dict:
+        data = await self._request("constants/ability_ids")
+        return data if isinstance(data, dict) else {}
+
     async def get_hero_stats(self) -> list[dict]:
         data = await self._request("heroStats")
         if not isinstance(data, list):
