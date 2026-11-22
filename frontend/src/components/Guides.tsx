@@ -3,7 +3,7 @@ import { RefreshCw } from "lucide-react";
 import "./Guides.css";
 
 type Hero = { id: number; name: string; image?: string | null };
-type ItemStat = { item_id: number; name: string; key?: string | null; matches: number; wins?: number | null; win_rate?: number | null };
+type ItemStat = { item_id: number; name: string; key?: string | null; matches: number; wins?: number | null; win_rate?: number | null; adjusted_win_rate?: number | null };
 type SkillStat = { ability_id: number; name: string; level?: number | null; time?: number | null; time_average?: number | null; matches: number; wins: number; win_rate: number | null };
 type GuideData = {
   hero: Hero;
@@ -125,7 +125,7 @@ export default function Guides({ language }: { language: Lang }) {
             <h3>{label}</h3>
             {guide.build[key]?.length ? guide.build[key].slice(0,8).map(item => <div className="guide-item-row" key={item.item_id}>
               {itemImage(item.key) ? <img src={itemImage(item.key) || ""} alt="" loading="lazy"/> : <span className="guide-item-placeholder">{item.item_id}</span>}
-              <div><strong>{item.name}</strong><small>{item.matches.toLocaleString()} {copy(language,"matches","матчей")}</small></div>
+              <div><strong>{item.name}</strong><small>{item.matches.toLocaleString()} {copy(language,"matches","матчей")} · {copy(language,"adjusted","скорр.")} {item.adjusted_win_rate == null ? "—" : item.adjusted_win_rate.toFixed(1)+"%"}</small></div>
               <b>{item.win_rate == null ? "—" : `${item.win_rate.toFixed(1)}%`}</b>
             </div>) : <p className="guide-empty">{copy(language,"No item data for this phase.","Нет данных о предметах для этой стадии.")}</p>}
           </article>)}
