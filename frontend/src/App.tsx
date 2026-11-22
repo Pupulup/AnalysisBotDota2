@@ -262,8 +262,17 @@ function App() {
                 </div>
               </section>
 
-              {!match.is_parsed && (
-                <div className="error-panel"><Shield size={19} /><span>OpenDota has not parsed replay data for this match. Advanced sections require replay parsing.</span><button className="analyze-button" onClick={requestMatchParse} disabled={parseLoading}>{parseLoading ? "Sending..." : "Request replay parsing"}</button></div>
+              <div className="match-meta">
+                <span>DATA SOURCE: {match.data_source?.toUpperCase() || "OPENDOTA"}</span>
+                {match.replay_age_days !== null && match.replay_age_days !== undefined && (
+                  <span>REPLAY AGE: {match.replay_age_days} DAYS</span>
+                )}
+              </div>
+              {!match.is_parsed && match.replay_analysis_allowed && (
+                <div className="error-panel"><Shield size={19} /><span>Replay events are not available yet. You can request replay parsing as a fallback.</span><button className="analyze-button" onClick={requestMatchParse} disabled={parseLoading}>{parseLoading ? "Sending..." : "Request replay parsing"}</button></div>
+              )}
+              {!match.replay_analysis_allowed && (
+                <div className="error-panel"><Shield size={19} /><span>This match is older than 90 days or its date is unavailable. Replay parsing is disabled; available match statistics can still be viewed.</span></div>
               )}
               {parseMessage && <div className="loading-panel"><span>{parseMessage}</span></div>}
 
@@ -279,7 +288,7 @@ function App() {
             </>
           )}
 
-          <footer>DOTA ANALYTICS <span>·</span> POWERED BY OPENDOTA</footer>
+          <footer>DOTA ANALYTICS <span>·</span> POWERED BY STRATZ / OPENDOTA</footer>
         </section>
       </main>
     </div>
