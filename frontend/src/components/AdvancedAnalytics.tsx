@@ -28,10 +28,32 @@ function TeamfightSection({ match, language }: Props) {
       {!fights.length ? <div className="analytics-empty">{copy(language,"OpenDota has not supplied parsed teamfight data for this match.","OpenDota не предоставила обработанные данные о командных сражениях.")}</div> :
         <div className="advanced-fights">{fights.map((fight, index) => {
           const fightPlayers = Array.isArray(fight.players) ? fight.players as Array<Record<string, any>> : [];
-          const contributions = fightPlayers.map((stats, i) => {
-            const player = playersBySlot.get(Number(stats.player_slot)) || match.players[i];
-            return { stats, player, impact: Number(stats.damage || 0) + Number(stats.healing || 0) * 0.7 + Math.max(0, Number(stats.gold_delta || 0)) * 2 };
-          }).filter(x => x.player).sort((a,b)=>b.impact-a.impact);
+          const base = fightPlayers.map((stats, i) => ({
+            stats,
+            player: playersBySlot.get(Number(stats.player_slot)) || match.players[i]
+          })).filter(x => x.player);
+          const percentile = (value: number, values: number[]) => {
+            if (!values.length) return 50;
+            const below = values.filter(candidate => candidate < value).length;
+            const equal = values.filter(candidate => candidate === value).length;
+            return (below + equal * 0.5) / values.length * 100;
+          };
+          const values = {
+            damage: base.map(x => Number(x.stats.damage || 0)),
+            healing: base.map(x => Number(x.stats.healing || 0)),
+            gold: base.map(x => Number(x.stats.gold_delta || 0)),
+            involvement: base.map(x => Number(x.stats.kills || 0) + Number(x.stats.assists || 0)),
+            deaths: base.map(x => Number(x.stats.deaths || 0))
+          };
+          const contributions = base.map(({stats,player}) => {
+            const impact =
+              percentile(Number(stats.kills || 0) + Number(stats.assists || 0), values.involvement) * 0.25 +
+              percentile(Number(stats.damage || 0), values.damage) * 0.25 +
+              percentile(Number(stats.healing || 0), values.healing) * 0.20 +
+              percentile(Number(stats.gold_delta || 0), values.gold) * 0.15 +
+              (100 - percentile(Number(stats.deaths || 0), values.deaths)) * 0.15;
+            return {stats,player,impact};
+          }).sort((a,b)=>b.impact-a.impact);
           const max = Math.max(1, ...contributions.map(x=>x.impact));
           return <article className="advanced-fight-card" key={index}>
             <div className="advanced-fight-head"><strong>{copy(language,"Fight","Сражение")} #{index+1}</strong><span>{mmss(Number(fight.start)||0)} – {mmss(Number(fight.end)||0)}</span><b>{Number(fight.deaths||0)} {copy(language,"deaths","смертей")}</b></div>
@@ -46,7 +68,7 @@ function TeamfightSection({ match, language }: Props) {
           </article>;
         })}</div>}
     </Panel>
-    <Panel title={copy(language,"How to read this section","Как читать этот раздел")}><p className="advanced-note">{copy(language,"Impact bars are a descriptive index based on recorded damage, healing and positive gold swing. They are not a causal or official fight rating. OpenDota may omit some players or fields.","Полосы вклада — описательный индекс на основе урона, лечения и положительной разницы золота. Это не официальная оценка сражения и не доказательство причинного влияния. OpenDota может не вернуть часть игроков или показателей.")}</p></Panel>
+    <Panel title={copy(language,"How to read this section","Как читать этот раздел")}><p className="advanced-note">{copy(language,"Impact bars use relative percentiles within each fight for kill involvement, damage, healing, gold swing and survival. This reduces the dominance of raw damage, but remains a descriptive heuristic rather than an official or causal fight rating. OpenDota may omit some fields.","Полосы вклада используют относительные процентили внутри сражения: участие в убийствах, урон, лечение, изменение золота и выживаемость. Это снижает доминирование абсолютного урона, но остаётся эвристикой, а не официальной или причинной оценкой. OpenDota может не вернуть часть показателей.")}</p></Panel>
   </div>;
 }
 
@@ -56,7 +78,7 @@ function ItemsSection({ match, language }: Props) {
   const inventory = (p: MatchPlayer) => p.item_inventory?.length ? p.item_inventory : [];
   const logs = players.flatMap(p=>(p.purchase_log||[]).map(entry=>({p,entry}))).sort((a,b)=>(a.entry.time||0)-(b.entry.time||0));
   return <div className="analytics-page">
-    <Panel title={copy(language,"Item builds and purchase timing","Сборки и время покупки предметов")} subtitle={copy(language,"PURCHASE EVENTS · STRATZ PLAYBACK","СОБЫТИЯ ПОКУПОК · STRATZ PLAYBACK")}>
+    <Panel title={copy(language,"Item builds and purchase timing","Сборки и время покупки предметов")} subtitle={copy(language,"PURCHASE EVENTS · STRATZ PLAYBACK / OPENDOTA FALLBACK","СОБЫТИЯ ПОКУПОК · STRATZ PLAYBACK / РЕЗЕРВ OPENDOTA")}>
       <div className="advanced-toolbar"><label>{copy(language,"Player","Игрок")}</label><select value={selected} onChange={e=>setSelected(e.target.value)}><option value="all">{copy(language,"All players","Все игроки")}</option>{match.players.map(p=><option key={p.player_slot} value={String(p.player_slot)}>{playerName(p)}</option>)}</select></div>
       <div className="advanced-item-grid">{players.map(p=><article className="advanced-item-player" key={p.player_slot}>
         <div className="advanced-player-label">{p.hero_image?<img src={p.hero_image} alt={heroName(p)}/>:null}<div><strong>{playerName(p)}</strong><small>{heroName(p)} · {radiant(p)?copy(language,"Radiant","Свет"):copy(language,"Dire","Тьма")}</small></div></div>
