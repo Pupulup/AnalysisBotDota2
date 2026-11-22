@@ -55,7 +55,7 @@ query GetMatch($matchId: Long!) {
 """
 
 GUIDE_QUERY = """
-query HeroGuide($heroId: Short!, $matchLimit: Int!) {
+query HeroGuide($heroId: Short!) {
   heroStats {
     heroBase: winDay(take: 30, heroIds: [$heroId]) {
       matchCount
@@ -100,7 +100,7 @@ query HeroGuide($heroId: Short!, $matchLimit: Int!) {
       time
       timeAverage
     }
-    heroVsHeroMatchup(heroId: $heroId, matchLimit: $matchLimit) {
+    heroVsHeroMatchup(heroId: $heroId) {
       advantage {
         heroId
         matchCountWith
@@ -246,7 +246,7 @@ class StratzClient:
     async def get_hero_guide(self, hero_id: int) -> dict[str, Any]:
         if not self.enabled:
             raise StratzError("STRATZ_API_KEY не настроен.")
-        data = await self._graphql(GUIDE_QUERY, {"heroId": hero_id, "matchLimit": 0})
+        data = await self._graphql(GUIDE_QUERY, {"heroId": hero_id})
         if not isinstance(data.get("heroStats"), dict):
             raise StratzError("STRATZ не вернул статистику гайда для этого героя.")
         return data
