@@ -100,7 +100,8 @@ function DecisionAnalysis({ match, language }: Props) {
     return { player, fightDeaths, fightDamage, earlyPurchases, purchaseCount: meaningfulPurchases.length };
   }).sort((a, b) => b.fightDeaths - a.fightDeaths);
 
-  const allPurchaseCount = players.reduce((sum, player) => sum + (Array.isArray(player.purchase_log) ? player.purchase_log.length : 0), 0);\n  const purchaseRows = players.flatMap(player =>
+  const allPurchaseCount = players.reduce((sum, player) => sum + (Array.isArray(player.purchase_log) ? player.purchase_log.length : 0), 0);
+  const purchaseRows = players.flatMap(player =>
     (Array.isArray(player.purchase_log) ? player.purchase_log : [])
       .filter((item: Record<string, any>) => Number(item.time) >= 0 && Number(item.time) <= match.duration)
       .map((item: Record<string, any>) => ({ player, item, time: Number(item.time) || 0 }))
