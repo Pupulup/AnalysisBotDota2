@@ -1524,3 +1524,8 @@ footer span {
     height: 27px;
   }
 }
+
+.topbar-actions{display:flex;align-items:center;gap:12px}
+.language-switcher{display:flex;align-items:center;gap:7px;color:#8190a6;font-size:9px;letter-spacing:1px}
+.language-switcher select{background:#141d2a;border:1px solid #35445b;border-radius:5px;color:#dce7f6;padding:7px 9px;font-size:10px;cursor:pointer}
+@media(max-width:600px){.topbar-actions{gap:7px}.language-switcher span{display:none}.language-switcher select{padding:6px 7px}.version{padding:5px 7px}}
