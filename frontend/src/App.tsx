@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Swords, Users, ChartNoAxesCombined, Trophy, Activity,
-  ChevronRight, Search, Clock, Shield, RefreshCw, Flame, Package, Coins, ShieldCheck, TrendingUp
+  ChevronRight, Search, Clock, Shield, RefreshCw, Flame, Package, Coins, ShieldCheck, TrendingUp, BrainCircuit
 } from "lucide-react";
 import {
   AnalysisSection,
@@ -99,6 +99,8 @@ function App() {
         return <TeamsSection match={match} />;
       case "Analysis":
         return <AnalysisSection match={match} />;
+      case "Decisions":
+        return <DecisionAnalysis match={match} language={language} />;
       case "Fights":
       case "Items":
       case "Economy":
@@ -116,7 +118,8 @@ function App() {
     Players: "Player Statistics",
     Timeline: "Match Timeline",
     Teams: "Team Comparison",
-    Analysis: "Match Analysis",\n    Decisions: "Decision Analysis",
+    Analysis: "Match Analysis",
+    Decisions: "Decision Analysis",
     Fights: "Teamfight Analysis",
     Items: "Item Builds",
     Economy: "Economy Analysis",
