@@ -72,3 +72,5 @@ async def get_player_analytics(
         )
     except OpenDotaError as error:
         raise HTTPException(status_code=error.status_code, detail=error.message)
+    except StratzError as error:
+        raise HTTPException(status_code=502, detail=str(error))
