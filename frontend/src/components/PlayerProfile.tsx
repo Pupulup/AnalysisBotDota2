@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import ReactECharts from "echarts-for-react";
 
 type Lang = "en" | "ru";
@@ -35,7 +36,7 @@ const rankLabel = (tier?: number | null) => {
   return names[Math.floor(tier / 10)] || "Rank unavailable";
 };
 
-function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return <section className="player-analytics-panel"><header><div><h2>{title}</h2>{subtitle && <span>{subtitle}</span>}</div></header>{children}</section>;
 }
 
@@ -190,3 +191,5 @@ export default function PlayerProfile({ language }: { language: Lang }) {
     </>}
   </div>;
 }
+
+import "./PlayerProfile.css";
