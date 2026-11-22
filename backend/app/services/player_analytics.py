@@ -61,6 +61,7 @@ def build_player_analytics(
     mode_category: str,
     matches: list[dict[str, Any]],
     heroes: dict[int, dict[str, Any]],
+    data_source: str = "opendota",
 ) -> dict[str, Any]:
     ordered = sorted(matches, key=lambda item: int(item.get("start_time") or 0), reverse=True)
     summary = summarize(ordered)
@@ -69,6 +70,7 @@ def build_player_analytics(
     previous_summary = summarize(previous) if previous else None
 
     role_groups: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    position_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     hero_groups: dict[int, list[dict[str, Any]]] = defaultdict(list)
     normalized_matches = []
 
@@ -76,6 +78,9 @@ def build_player_analytics(
         lane_role = int(match.get("lane_role") or 0)
         hero_id = int(match.get("hero_id") or 0)
         role_groups[lane_role].append(match)
+        position = str(match.get("position") or "")
+        if position:
+            position_groups[position].append(match)
         if hero_id:
             hero_groups[hero_id].append(match)
         mode = describe_game_mode(match.get("game_mode"), match.get("lobby_type"))
@@ -90,6 +95,9 @@ def build_player_analytics(
             "hero_image": hero.get("image"),
             "lane_role": lane_role or None,
             "lane_role_name": LANE_ROLES.get(lane_role, "Unknown lane"),
+            "position": position or None,
+            "lane": match.get("lane"),
+            "role": match.get("role"),
             "game_mode": match.get("game_mode"),
             "lobby_type": match.get("lobby_type"),
             "mode_category": mode["mode_category"],
@@ -107,6 +115,16 @@ def build_player_analytics(
         for lane_role, group in role_groups.items()
     ]
     role_breakdown.sort(key=lambda item: item["matches"], reverse=True)
+
+    position_breakdown = [
+        {
+            "position": position,
+            "label": position.replace("POSITION_", "Position "),
+            **summarize(group),
+        }
+        for position, group in position_groups.items()
+    ]
+    position_breakdown.sort(key=lambda item: item["matches"], reverse=True)
 
     hero_breakdown = []
     for hero_id, group in hero_groups.items():
@@ -162,6 +180,7 @@ def build_player_analytics(
         },
         "patch": patch,
         "mode_category": mode_category,
+        "data_source": data_source,
         "sample": {"count": count, "level": sample_level},
         "summary": summary,
         "recent_period": recent_summary,
@@ -169,6 +188,7 @@ def build_player_analytics(
         "period_delta": deltas,
         "insights": insights[:4],
         "role_breakdown": role_breakdown,
+        "position_breakdown": position_breakdown,
         "hero_breakdown": hero_breakdown[:8],
         "matches": normalized_matches,
         "trend": list(reversed(normalized_matches)),
