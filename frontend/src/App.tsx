@@ -14,7 +14,8 @@ import {
   TeamsSection
 } from "./components/AnalyticsSections";
 import AdvancedAnalytics from "./components/AdvancedAnalytics";
-import { I18nProvider, Language, Localize } from "./i18n";
+import { I18nProvider, Localize } from "./i18n";
+import type { Language } from "./i18n";
 import "./App.css";
 
 const API_URL = "";
