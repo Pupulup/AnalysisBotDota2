@@ -177,7 +177,7 @@ async def get_hero_guide(
                             "hero_id": enemy_id,
                             "games": games,
                             "wins": wins,
-                            "win_rate": (wins / games * 100) if games else None,
+                            "win_rate": row.get("winRateHeroId1") if row.get("winRateHeroId1") is not None else ((wins / games * 100) if games else None),
                             "edge": row.get("synergy"),
                         })
                 matchup_data_available = bool(with_rows or vs_rows)
