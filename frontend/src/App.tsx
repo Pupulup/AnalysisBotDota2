@@ -231,6 +231,7 @@ function App() {
                   <span>MATCH #{match.match_id}</span>
                   <span><Clock size={12} />{formatDuration(match.duration)}</span>
                   <span>{match.human_players ?? match.players.length} PLAYERS</span>
+                  <span>{match.game_mode_name || "UNKNOWN MODE"} · {match.lobby_type_name || "UNKNOWN LOBBY"}</span>
                 </div>
                 <div className="scoreboard">
                   <div className="team radiant">
@@ -253,6 +254,7 @@ function App() {
               </section>
 
               <div className="match-meta">
+                <span>MODE CATEGORY: {(match.mode_category || "unknown").toUpperCase()}</span>
                 <span>DATA SOURCE: {match.data_source?.toUpperCase() || "OPENDOTA"}</span>
                 {match.replay_age_days !== null && match.replay_age_days !== undefined && (
                   <span>REPLAY AGE: {match.replay_age_days} DAYS</span>
