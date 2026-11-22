@@ -58,6 +58,8 @@ export interface MatchPlayer {
   position?: string | null;
   lane?: string | null;
   role?: string | null;
+  position_events?: Array<{ time: number; x: number; y: number }> | null;
+  death_events?: Array<{ time?: number; x: number; y: number; attacker?: string | null }> | null;
   is_roaming?: boolean | null;
   damage_taken?: unknown;
   item_uses?: Record<string, number> | null;
