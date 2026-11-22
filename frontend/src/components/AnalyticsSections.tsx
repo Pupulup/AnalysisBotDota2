@@ -55,6 +55,9 @@ export interface MatchPlayer {
   kills_log?: Array<{ time?: number; key?: string }> | null;
   ability_upgrades?: Array<{ time?: number; ability?: string; level?: number }> | null;
   lane_role?: number | null;
+  position?: string | null;
+  lane?: string | null;
+  role?: string | null;
   is_roaming?: boolean | null;
   damage_taken?: unknown;
   item_uses?: Record<string, number> | null;
@@ -412,12 +415,22 @@ export function playerScore(player: MatchPlayer, allPlayers: MatchPlayer[]) {
   ]);
 
   const survival = percentileScore(player, allPlayers, p => p.deaths, true);
+  const roleWeights: Record<string, { combat: number; utility: number; objectives: number; economy: number; survival: number }> = {
+    POSITION_1: { combat: 0.25, utility: 0.10, objectives: 0.20, economy: 0.25, survival: 0.20 },
+    POSITION_2: { combat: 0.30, utility: 0.10, objectives: 0.20, economy: 0.20, survival: 0.20 },
+    POSITION_3: { combat: 0.30, utility: 0.20, objectives: 0.20, economy: 0.15, survival: 0.15 },
+    POSITION_4: { combat: 0.25, utility: 0.30, objectives: 0.20, economy: 0.10, survival: 0.15 },
+    POSITION_5: { combat: 0.20, utility: 0.35, objectives: 0.20, economy: 0.05, survival: 0.20 },
+  };
+  const weights = roleWeights[player.position || ""] || {
+    combat: 0.30, utility: 0.25, objectives: 0.20, economy: 0.15, survival: 0.10
+  };
   return weightedCategory([
-    { score: combat, weight: 0.30 },
-    { score: utility, weight: 0.25 },
-    { score: objectives, weight: 0.20 },
-    { score: economy, weight: 0.15 },
-    { score: survival, weight: 0.10 }
+    { score: combat, weight: weights.combat },
+    { score: utility, weight: weights.utility },
+    { score: objectives, weight: weights.objectives },
+    { score: economy, weight: weights.economy },
+    { score: survival, weight: weights.survival }
   ]) ?? 0;
 }
 
@@ -556,7 +569,7 @@ function MatchPdfReport({ match, ranked }: { match: MatchData; ranked: MatchPlay
           <td>{(p.obs_placed || 0) + (p.sen_placed || 0)}</td><td>{p.camps_stacked ?? "—"}</td><td>{p.stuns ?? "—"}</td><td>{playerScore(p, match.players).toFixed(0)}</td>
         </tr>)}</tbody>
       </table>
-      <p className="pdf-report-note">Performance score uses within-match percentile ranks across combat, utility, objectives, economy and survival. It is a heuristic, not an official Dota 2 rating.</p>
+      <p className="pdf-report-note">Performance score uses within-match percentiles and role-adjusted category weights when STRATZ provides a position. Missing position data uses neutral weights. It is a heuristic, not an official Dota 2 rating.</p>
     </section>
 
     <section className="pdf-report-section">
