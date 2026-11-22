@@ -117,7 +117,7 @@ class OpenDotaClient:
     async def get_current_patch(self) -> dict:
         cache_valid = (
             self._patches_cache is not None
-            and time.time() - self._patches_cache_time < 86400
+            and time.time() - self._patches_cache_time < 3600
         )
         if cache_valid:
             patches = self._patches_cache
