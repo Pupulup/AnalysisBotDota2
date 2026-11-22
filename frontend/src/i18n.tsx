@@ -1,6 +1,12 @@
-import React, { ReactNode, cloneElement, isValidElement } from "react";
+import React, { ReactNode, cloneElement, createContext, isValidElement, useContext } from "react";
 
 export type Language = "en" | "ru";
+
+const LanguageContext = createContext<Language>("en");
+export function I18nProvider({ language, children }: { language: Language; children: ReactNode }) {
+  return <LanguageContext.Provider value={language}>{children}</LanguageContext.Provider>;
+}
+export function useLanguage() { return useContext(LanguageContext); }
 
 const dictionary: Record<string, string> = {
   "WORKSPACE":"РАБОЧАЯ ОБЛАСТЬ","Overview":"Обзор","Players":"Игроки","Timeline":"Хронология","Teams":"Команды","Analysis":"Анализ",
@@ -10,7 +16,7 @@ const dictionary: Record<string, string> = {
   "Enter Dota 2 Match ID...":"Введите ID матча Dota 2...","Analyze":"Анализировать","Loading":"Загрузка","Loading match data...":"Загрузка данных матча...",
   "Ready to analyze":"Готово к анализу","Enter a Dota 2 Match ID to load match statistics.":"Введите ID матча Dota 2, чтобы загрузить статистику.",
   "API SYSTEM ONLINE":"API СИСТЕМА РАБОТАЕТ","PARSED":"ДАННЫЕ ОБРАБОТАНЫ","NOT PARSED":"НЕ ОБРАБОТАНО",
-  "RADIANT":"СВЕТ","DIRE":"ТЬМА","VICTORY":"ПОБЕДА","DEFEAT":"ПОРАЖЕНИЕ","UNKNOWN":"НЕИЗВЕСТНО",
+  "RADIANT":"СВЕТ","Radiant":"Свет","DIRE":"ТЬМА","Dire":"Тьма","VICTORY":"ПОБЕДА","Victory":"Победа","DEFEAT":"ПОРАЖЕНИЕ","Defeat":"Поражение","UNKNOWN":"НЕИЗВЕСТНО","Unknown":"Неизвестно",
   "WINNER":"ПОБЕДИТЕЛЬ","PLAYERS":"ИГРОКИ","OBJECTIVES":"ЦЕЛИ","GAME MODE ID":"ID РЕЖИМА ИГРЫ",
   "MATCH DURATION":"ДЛИТЕЛЬНОСТЬ МАТЧА","TOTAL KILLS":"ВСЕГО УБИЙСТВ","TOTAL NET WORTH":"ОБЩАЯ СТОИМОСТЬ","HERO DAMAGE":"УРОН ПО ГЕРОЯМ",
   "Match result":"Результат матча","Match MVP":"MVP матча","ESTIMATED PERFORMANCE LEADER":"ЛИДЕР ПО ОЦЕНОЧНОЙ ЭФФЕКТИВНОСТИ",
@@ -43,7 +49,12 @@ const dictionary: Record<string, string> = {
   "No player progression series available.":"Нет данных о динамике игрока.","Player progression · 5-minute intervals":"Динамика игрока · интервалы 5 минут",
   "Values are cumulative snapshots supplied by OpenDota; unavailable fields are shown as —.":"Накопительные значения из OpenDota; отсутствующие данные обозначены прочерком.",
   "RADIANT SCORE":"СЧЁТ СВЕТА","DIRE SCORE":"СЧЁТ ТЬМЫ","DURATION":"ДЛИТЕЛЬНОСТЬ",
-  "This match does not contain parsed gold or experience timeline data. The match overview and player statistics are still available.":"Для матча нет временных рядов золота или опыта. Остальная статистика доступна."
+  "This match does not contain parsed gold or experience timeline data. The match overview and player statistics are still available.":"Для матча нет временных рядов золота или опыта. Остальная статистика доступна.",
+  "PLAYER / HERO":"ИГРОК / ГЕРОЙ","HERO DMG":"УРОН ГЕРОЯ","TOWER DMG":"УРОН ПО СТРОЕНИЯМ","SCORE":"ОЦЕНКА","TEAM NOT SPECIFIED":"КОМАНДА НЕ УКАЗАНА","RESULT UNKNOWN":"РЕЗУЛЬТАТ НЕИЗВЕСТЕН",
+  "TOP-RANKED PLAYER":"ЛУЧШИЙ ПО РЕЙТИНГУ","No objective event log available.":"Журнал целей матча недоступен.","No teamfight details available.":"Подробности сражений недоступны.",
+  "Performance score is a heuristic, relative to the players in this match. It is not an official Dota 2 rating.":"Оценка эффективности — эвристика относительно игроков этого матча, а не официальный рейтинг Dota 2.",
+  "Performance score is a heuristic indicator calculated from KDA, GPM, hero damage, tower damage, teamfight participation (when supplied) and healing. It is not an official Dota 2 rating and should not be interpreted as a causal measure of a player's impact.":"Оценка эффективности — эвристический показатель на основе KDA, GPM, урона, участия в сражениях и лечения. Это не официальный рейтинг Dota 2 и не причинная оценка влияния игрока.",
+  "High kill participation through kills and assists.":"Высокое участие в убийствах за счёт убийств и помощи.","One of the match leaders in hero damage.":"Один из лидеров матча по урону героям.","Meaningful contribution to structural damage.":"Заметный вклад в нанесение урона строениям.","Among the strongest players by net worth.":"Один из лидеров по общей стоимости.","High death count; review positioning and fight selection.":"Много смертей: стоит пересмотреть позиционирование и выбор сражений.","Low building damage relative to combat involvement.":"Низкий урон строениям относительно участия в боях.","Performance is distributed across the recorded match statistics.":"Вклад распределён между доступными статистическими показателями.","No major statistical warning is apparent from the available summary fields.":"По доступной сводке серьёзных статистических проблем не выявлено."
 };
 
 export function translateText(value: string, language: Language): string {
