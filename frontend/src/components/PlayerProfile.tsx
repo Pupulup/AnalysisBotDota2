@@ -24,8 +24,8 @@ type PlayerAnalytics = {
   insights: Array<{ code: string; severity: "warning" | "info" | "positive"; delta: number | null }>;
   role_breakdown: Array<{ label: string; matches: number; win_rate: number | null; avg_gpm: number | null; avg_xpm: number | null; avg_kda: number | null }>;
   hero_breakdown: Array<{ hero_id: number; hero_name: string; hero_image?: string | null; matches: number; win_rate: number | null; avg_gpm: number | null; avg_kda: number | null }>;
-  matches: Array<{ match_id: number; start_time: number; win: boolean | null; hero_name: string; hero_image?: string | null; lane_role_name: string; kills: number; deaths: number; assists: number; gold_per_min: number | null; xp_per_min: number | null; hero_damage: number | null }>;
-  trend: Array<{ match_id: number; start_time: number; win: boolean | null; hero_name: string; hero_image?: string | null; lane_role_name: string; kills: number; deaths: number; assists: number; gold_per_min: number | null; xp_per_min: number | null; hero_damage: number | null }>;
+  matches: Array<{ match_id: number; start_time: number | null; win: boolean | null; hero_name: string; hero_image?: string | null; lane_role_name: string; kills: number; deaths: number; assists: number; gold_per_min: number | null; xp_per_min: number | null; hero_damage: number | null }>;
+  trend: Array<{ match_id: number; start_time: number | null; win: boolean | null; hero_name: string; hero_image?: string | null; lane_role_name: string; kills: number; deaths: number; assists: number; gold_per_min: number | null; xp_per_min: number | null; hero_damage: number | null }>;
 };
 
 const copy = (lang: Lang, en: string, ru: string) => lang === "ru" ? ru : en;
