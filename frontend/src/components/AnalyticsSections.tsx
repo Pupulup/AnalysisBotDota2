@@ -44,6 +44,9 @@ export interface MatchPlayer {
   tower_kills?: number | null;
   roshan_kills?: number | null;
   buyback_count?: number | null;
+  camps_stacked?: number | null;
+  rune_pickups?: number | null;
+  firstblood_claimed?: number | null;
   times?: number[] | null;
   gold_t?: number[] | null;
   xp_t?: number[] | null;
@@ -119,7 +122,7 @@ function Panel({ title, subtitle, children }: {
   </section>;
 }
 
-export function OverviewSection({ match }: { match: MatchData }) {
+export function OverviewSection({ match, onSelect }: { match: MatchData; onSelect: (player: MatchPlayer) => void }) {
   const players = match.players || [];
   const totalDamage = players.reduce((sum, p) => sum + p.hero_damage, 0);
   const totalNetWorth = players.reduce((sum, p) => sum + p.net_worth, 0);
@@ -163,6 +166,14 @@ export function OverviewSection({ match }: { match: MatchData }) {
         <div className="analytics-mvp-score"><strong>{playerScore(mvp, players).toFixed(0)}</strong><span>PERFORMANCE</span></div>
       </div>
     </Panel>}
+    <div className="overview-rosters">
+      <Panel title="Radiant roster" subtitle="PLAYER CONTRIBUTION · SELECT A PLAYER FOR DETAILS">
+        <div className="analytics-player-table">{players.filter(radiant).map(player => <PlayerCard key={player.player_slot} player={player} onSelect={onSelect} />)}</div>
+      </Panel>
+      <Panel title="Dire roster" subtitle="PLAYER CONTRIBUTION · SELECT A PLAYER FOR DETAILS">
+        <div className="analytics-player-table">{players.filter(player => !radiant(player)).map(player => <PlayerCard key={player.player_slot} player={player} onSelect={onSelect} />)}</div>
+      </Panel>
+    </div>
   </div>;
 }
 
@@ -223,30 +234,17 @@ function eventLabel(event: Record<string, any>) {
 
 export function TimelineSection({ match }: { match: MatchData }) {
   const language = useLanguage();
-  const gold = match.radiant_gold_adv || [];
   const xp = match.radiant_xp_adv || [];
   const events = [...(match.objectives || [])].sort((a, b) => (a.time || 0) - (b.time || 0));
-  const hasTimeline = gold.length > 0 || xp.length > 0;
+  const hasTimeline = xp.length > 0;
 
   return <div className="analytics-page">
     {hasTimeline ? <>
-      {gold.length > 0 && <Panel title="Gold advantage" subtitle="RADIANT POSITIVE · DIRE NEGATIVE">
-        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_gold_adv", language)} style={{ height: 300, width: "100%" }} /></div>
-      </Panel>}
       {xp.length > 0 && <Panel title="Experience advantage" subtitle="RADIANT POSITIVE · DIRE NEGATIVE">
         <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_xp_adv", language)} style={{ height: 300, width: "100%" }} /></div>
       </Panel>}
     </> : <Panel title="Timeline unavailable" subtitle="OPEN DOTA HAS NOT PROVIDED ADVANTAGE SERIES">
       <div className="analytics-empty">This match does not contain parsed gold or experience timeline data. The match overview and player statistics are still available.</div>
-    </Panel>}
-    {(match.teamfights || []).length > 0 && <Panel title="Teamfight summary" subtitle={`${(match.teamfights || []).length} DETECTED TEAMFIGHTS`}>
-      <div className="analytics-events">
-        {(match.teamfights || []).map((fight, index) => <div className="analytics-event" key={index}>
-          <span className="analytics-event-time">{duration(Math.max(0, Number(fight.start) || 0))}</span>
-          <span className="analytics-event-marker"><Swords size={14} /></span>
-          <div><strong>Teamfight {index + 1}</strong><small>{Number(fight.deaths || 0)} DEATHS · {duration(Math.max(0, (Number(fight.end) || 0) - (Number(fight.start) || 0)))} DURATION</small></div>
-        </div>)}
-      </div>
     </Panel>}
     <Panel title="Match objectives" subtitle={`${events.length} RECORDED EVENTS`}>
       {events.length ? <div className="analytics-events">
@@ -361,18 +359,62 @@ export function TeamsSection({ match }: { match: MatchData }) {
   </div>;
 }
 
+function percentileScore(player: MatchPlayer, allPlayers: MatchPlayer[], selector: (p: MatchPlayer) => number, inverse = false): number | null {
+  const values = allPlayers.map(selector).filter(value => Number.isFinite(value));
+  if (!values.length || values.every(value => value === 0)) return null;
+  const target = selector(player);
+  const comparable = inverse ? values.map(value => -value) : values;
+  const scoreValue = inverse ? -target : target;
+  const below = comparable.filter(value => value < scoreValue).length;
+  const equal = comparable.filter(value => value === scoreValue).length;
+  return 100 * (below + equal * 0.5) / comparable.length;
+}
+
+function weightedCategory(entries: Array<{ score: number | null; weight: number }>): number | null {
+  const available = entries.filter(entry => entry.score !== null);
+  if (!available.length) return null;
+  const weight = available.reduce((sum, entry) => sum + entry.weight, 0);
+  return available.reduce((sum, entry) => sum + (entry.score || 0) * entry.weight, 0) / weight;
+}
+
 export function playerScore(player: MatchPlayer, allPlayers: MatchPlayer[]) {
-  const max = (selector: (p: MatchPlayer) => number) => Math.max(...allPlayers.map(selector), 1);
-  const normalized = (value: number, maximum: number) => Math.min(value / Math.max(maximum, 1), 1);
-  const participation = player.teamfight_participation != null
-    ? Math.max(0, Math.min(player.teamfight_participation, 1))
-    : normalized(player.kills + player.assists, max(p => p.kills + p.assists));
-  const kdaScore = Math.min(kda(player) / 8, 1);
-  const gpmScore = normalized(player.gold_per_min, max(p => p.gold_per_min));
-  const damageScore = normalized(player.hero_damage, max(p => p.hero_damage));
-  const objectiveScore = normalized(player.tower_damage, max(p => p.tower_damage));
-  const healingScore = normalized(player.hero_healing, max(p => p.hero_healing));
-  return 100 * (kdaScore * 0.20 + gpmScore * 0.20 + damageScore * 0.25 + objectiveScore * 0.15 + participation * 0.15 + healingScore * 0.05);
+  const killParticipation = percentileScore(player, allPlayers, p => p.kills + p.assists);
+  const damage = percentileScore(player, allPlayers, p => p.hero_damage);
+  const teamfight = percentileScore(player, allPlayers, p => p.teamfight_participation ?? 0);
+  const combat = weightedCategory([
+    { score: killParticipation, weight: 0.4 },
+    { score: damage, weight: 0.3 },
+    { score: teamfight, weight: 0.3 }
+  ]);
+
+  const utility = weightedCategory([
+    { score: percentileScore(player, allPlayers, p => (p.obs_placed || 0) + (p.sen_placed || 0)), weight: 0.3 },
+    { score: percentileScore(player, allPlayers, p => p.hero_healing), weight: 0.25 },
+    { score: percentileScore(player, allPlayers, p => p.stuns || 0), weight: 0.2 },
+    { score: percentileScore(player, allPlayers, p => p.camps_stacked || 0), weight: 0.15 },
+    { score: percentileScore(player, allPlayers, p => p.rune_pickups || 0), weight: 0.1 }
+  ]);
+
+  const objectives = weightedCategory([
+    { score: percentileScore(player, allPlayers, p => p.tower_damage), weight: 0.6 },
+    { score: percentileScore(player, allPlayers, p => p.tower_kills || 0), weight: 0.2 },
+    { score: percentileScore(player, allPlayers, p => p.roshan_kills || 0), weight: 0.2 }
+  ]);
+
+  const economy = weightedCategory([
+    { score: percentileScore(player, allPlayers, p => p.gold_per_min), weight: 0.45 },
+    { score: percentileScore(player, allPlayers, p => p.xp_per_min), weight: 0.3 },
+    { score: percentileScore(player, allPlayers, p => p.last_hits), weight: 0.25 }
+  ]);
+
+  const survival = percentileScore(player, allPlayers, p => p.deaths, true);
+  return weightedCategory([
+    { score: combat, weight: 0.30 },
+    { score: utility, weight: 0.25 },
+    { score: objectives, weight: 0.20 },
+    { score: economy, weight: 0.15 },
+    { score: survival, weight: 0.10 }
+  ]) ?? 0;
 }
 
 function playerInsight(player: MatchPlayer, allPlayers: MatchPlayer[]) {
