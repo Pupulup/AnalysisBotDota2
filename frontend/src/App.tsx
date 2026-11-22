@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  Swords, Users, ChartNoAxesCombined, Trophy, Activity,
-  ChevronRight, Search, Clock, Shield, RefreshCw, Flame, Package, Coins, ShieldCheck, TrendingUp, BrainCircuit
+  Swords, ChartNoAxesCombined, Trophy, Activity,
+  ChevronRight, Search, Clock, Shield, RefreshCw, Package, Coins, BrainCircuit
 } from "lucide-react";
 import {
   AnalysisSection,
