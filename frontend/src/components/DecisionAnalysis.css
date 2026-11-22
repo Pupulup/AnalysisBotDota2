@@ -1,0 +1,27 @@
+.decision-analysis{gap:18px}
+.decision-panel{min-width:0}
+.decision-intro,.decision-method{color:#8795aa;font-size:12px;line-height:1.65;margin:0 0 16px}
+.decision-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.decision-kpis>div{display:flex;flex-direction:column;gap:8px;padding:14px;background:#111a28;border:1px solid #29374c;border-radius:9px;min-width:0}
+.decision-kpis span{font-size:10px;color:#8190a6}
+.decision-kpis strong{font-size:22px;color:#e7edf7}
+.decision-list{display:flex;flex-direction:column;gap:10px}
+.decision-event{padding:14px;background:#111a28;border:1px solid #29374c;border-radius:9px;min-width:0}
+.decision-event-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.decision-event-top strong{color:#e7edf7}
+.decision-event-top span{color:#8290a5;font-size:11px}
+.decision-event-top b{margin-left:auto;color:#e9a66e;font-size:11px}
+.decision-event-metrics{display:flex;flex-wrap:wrap;gap:8px 16px;color:#8290a5;font-size:11px}
+.decision-event-metrics b{color:#dce5f3}
+.decision-event p{margin:10px 0 0;color:#9aa8bc;font-size:11px;line-height:1.6}
+.decision-player-table{overflow-x:auto}
+.decision-player-row{display:grid;grid-template-columns:minmax(130px,1.5fr) repeat(4,minmax(85px,1fr));gap:12px;align-items:center;padding:11px 8px;border-bottom:1px solid #263246;font-size:11px;min-width:560px}
+.decision-player-row strong{color:#e0e8f5;overflow:hidden;text-overflow:ellipsis}
+.decision-player-row span{color:#9aa8bc}
+.decision-player-head{color:#74839a;font-size:9px;text-transform:uppercase;letter-spacing:.6px}
+.decision-purchases{display:flex;flex-direction:column;gap:0}
+.decision-purchase-row{display:grid;grid-template-columns:65px minmax(120px,1fr) minmax(120px,1fr);gap:12px;padding:10px 6px;border-bottom:1px solid #263246;font-size:11px}
+.decision-purchase-row time{color:#82aef3;font-variant-numeric:tabular-nums}
+.decision-purchase-row strong{color:#dce5f3;overflow:hidden;text-overflow:ellipsis}
+.decision-purchase-row span{color:#9aa8bc}
+@media(max-width:700px){.decision-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.decision-player-row{min-width:560px}.decision-purchase-row{grid-template-columns:52px minmax(90px,1fr) minmax(100px,1fr);gap:7px;font-size:10px}}

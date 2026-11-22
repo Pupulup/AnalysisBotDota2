@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Swords, Users, ChartNoAxesCombined, Trophy, Activity,
-  ChevronRight, Search, Clock, Shield, RefreshCw, Flame, Package, Coins, ShieldCheck, TrendingUp
+  ChevronRight, Search, Clock, Shield, RefreshCw, Flame, Package, Coins, ShieldCheck, TrendingUp, BrainCircuit
 } from "lucide-react";
 import {
   AnalysisSection,
@@ -14,6 +14,7 @@ import {
   TeamsSection
 } from "./components/AnalyticsSections";
 import AdvancedAnalytics from "./components/AdvancedAnalytics";
+import DecisionAnalysis from "./components/DecisionAnalysis";
 import { I18nProvider, Localize } from "./i18n";
 import type { Language } from "./i18n";
 import "./App.css";
@@ -26,6 +27,7 @@ const navigation = [
   { name: "Timeline", icon: ChartNoAxesCombined },
   { name: "Teams", icon: Swords },
   { name: "Analysis", icon: Trophy },
+  { name: "Decisions", icon: BrainCircuit },
   { name: "Fights", icon: Flame },
   { name: "Items", icon: Package },
   { name: "Economy", icon: Coins },
@@ -97,6 +99,8 @@ function App() {
         return <TeamsSection match={match} />;
       case "Analysis":
         return <AnalysisSection match={match} />;
+      case "Decisions":
+        return <DecisionAnalysis match={match} language={language} />;
       case "Fights":
       case "Items":
       case "Economy":
@@ -115,6 +119,7 @@ function App() {
     Timeline: "Match Timeline",
     Teams: "Team Comparison",
     Analysis: "Match Analysis",
+    Decisions: "Decision Analysis",
     Fights: "Teamfight Analysis",
     Items: "Item Builds",
     Economy: "Economy Analysis",
@@ -153,10 +158,6 @@ function App() {
         </nav>
         <div className="sidebar-footer"><div className="status-dot" />API SYSTEM ONLINE</div>
       </aside>
-      <nav className="mobile-nav" aria-label="Main navigation">
-        {navigation.map(item => { const Icon = item.icon; return <button key={item.name} className={activeTab === item.name ? "active" : ""} onClick={() => { setActiveTab(item.name); setSelectedPlayer(null); }}><Icon size={17}/><span>{item.name}</span></button>; })}
-      </nav>
-
       <main className="main">
         <header className="topbar">
           <div>
