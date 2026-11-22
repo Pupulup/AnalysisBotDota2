@@ -248,6 +248,7 @@ function App() {
                   <span><Clock size={12} />{formatDuration(match.duration)}</span>
                   <span>{match.human_players ?? match.players.length} PLAYERS</span>
                   <span>{match.game_mode_name || "UNKNOWN MODE"} · {match.lobby_type_name || "UNKNOWN LOBBY"}</span>
+                  <span>PATCH ID: {match.patch_id ?? "UNKNOWN"}</span>
                 </div>
                 <div className="scoreboard">
                   <div className="team radiant">
