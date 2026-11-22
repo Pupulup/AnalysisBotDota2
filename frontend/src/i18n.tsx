@@ -10,7 +10,7 @@ export function I18nProvider({ language, children }: { language: Language; child
 export function useLanguage() { return useContext(LanguageContext); }
 
 const dictionary: Record<string, string> = {
-  "WORKSPACE":"РАБОЧАЯ ОБЛАСТЬ","Overview":"Обзор","Players":"Игроки","Timeline":"Хронология","Teams":"Команды","Analysis":"Анализ",
+  "WORKSPACE":"РАБОЧАЯ ОБЛАСТЬ","OVERVIEW":"ОБЗОР","PLAYERS":"ИГРОКИ","TIMELINE":"ХРОНОЛОГИЯ","TEAMS":"КОМАНДЫ","ANALYSIS":"АНАЛИЗ","FIGHTS":"СРАЖЕНИЯ","ITEMS":"ПРЕДМЕТЫ","ECONOMY":"ЭКОНОМИКА","ROLES":"РОЛИ","TRENDS":"ДИНАМИКА","Overview":"Обзор","Players":"Игроки","Timeline":"Хронология","Teams":"Команды","Analysis":"Анализ",
   "Fights":"Сражения","Items":"Предметы","Economy":"Экономика","Roles":"Роли","Trends":"Динамика",
   "Match Overview":"Обзор матча","Player Statistics":"Статистика игроков","Match Timeline":"Хронология матча","Team Comparison":"Сравнение команд","Match Analysis":"Анализ матча","Teamfight Analysis":"Анализ командных сражений","Item Builds":"Сборки предметов","Economy Analysis":"Анализ экономики","Role Analysis":"Анализ ролей","Player Trends":"Динамика игрока",
   "MATCH CENTER":"ЦЕНТР АНАЛИЗА МАТЧЕЙ","Detailed Dota 2 match analytics platform.":"Платформа подробной аналитики матчей Dota 2.",
