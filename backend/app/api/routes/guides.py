@@ -71,6 +71,7 @@ async def get_guide_heroes():
 async def get_hero_guide(
     hero_id: int,
     enemy_hero_ids: list[int] = Query(default=[]),
+    ally_hero_ids: list[int] = Query(default=[]),
 ):
     if hero_id <= 0:
         raise HTTPException(status_code=400, detail="Некорректный ID героя.")
@@ -84,20 +85,9 @@ async def get_hero_guide(
         if hero is None:
             raise HTTPException(status_code=404, detail="Герой не найден.")
 
-        matchups = await opendota.get_hero_matchups(hero_id)
-        matchup_by_hero = {int(row.get("hero_id") or 0): row for row in matchups}
         selected_matchups = []
-        for enemy_id in enemy_hero_ids:
-            row = matchup_by_hero.get(enemy_id)
-            if row:
-                games = int(row.get("games_played") or 0)
-                wins = int(row.get("wins") or 0)
-                selected_matchups.append({
-                    "hero_id": enemy_id,
-                    "games": games,
-                    "wins": wins,
-                    "win_rate": (wins / games * 100) if games else None,
-                })
+        ally_synergies = []
+        matchup_data_available = False
 
         build = {}
         abilities = []
@@ -115,8 +105,69 @@ async def get_hero_guide(
                 }
                 abilities = stats.get("abilities") or []
                 talents = stats.get("talents") or []
+
+                matchup = stats.get("heroVsHeroMatchup") or {}
+                advantages = matchup.get("advantage") or []
+                hero_advantage = next(
+                    (entry for entry in advantages if int(entry.get("heroId") or 0) == hero_id),
+                    advantages[0] if advantages else {},
+                )
+                with_rows = {
+                    int(entry.get("heroId2") or 0): entry
+                    for entry in hero_advantage.get("with") or []
+                }
+                vs_rows = {
+                    int(entry.get("heroId2") or 0): entry
+                    for entry in hero_advantage.get("vs") or []
+                }
+
+                for ally_id in ally_hero_ids:
+                    row = with_rows.get(ally_id)
+                    if row:
+                        games = int(row.get("matchCount") or 0)
+                        wins = int(row.get("winCount") or 0)
+                        ally_synergies.append({
+                            "hero_id": ally_id,
+                            "games": games,
+                            "wins": wins,
+                            "win_rate": (wins / games * 100) if games else None,
+                            "edge": row.get("synergy"),
+                        })
+
+                for enemy_id in enemy_hero_ids:
+                    row = vs_rows.get(enemy_id)
+                    if row:
+                        games = int(row.get("matchCount") or 0)
+                        wins = int(row.get("winCount") or 0)
+                        selected_matchups.append({
+                            "hero_id": enemy_id,
+                            "games": games,
+                            "wins": wins,
+                            "win_rate": (wins / games * 100) if games else None,
+                            "edge": row.get("synergy"),
+                        })
+                matchup_data_available = bool(with_rows or vs_rows)
                 data_source = "stratz+opendota"
             except StratzError:
+                pass
+
+        if enemy_hero_ids and not selected_matchups:
+            try:
+                opendota_matchups = await opendota.get_hero_matchups(hero_id)
+                matchup_by_hero = {int(row.get("hero_id") or 0): row for row in opendota_matchups}
+                for enemy_id in enemy_hero_ids:
+                    row = matchup_by_hero.get(enemy_id)
+                    if row:
+                        games = int(row.get("games_played") or 0)
+                        wins = int(row.get("wins") or 0)
+                        selected_matchups.append({
+                            "hero_id": enemy_id,
+                            "games": games,
+                            "wins": wins,
+                            "win_rate": (wins / games * 100) if games else None,
+                            "edge": None,
+                        })
+            except OpenDotaError:
                 pass
 
         popularity = await opendota.get_hero_item_popularity(hero_id)
@@ -146,6 +197,8 @@ async def get_hero_guide(
             "abilities": abilities,
             "talents": talents,
             "enemy_matchups": selected_matchups,
+            "ally_synergies": ally_synergies,
+            "matchup_data_available": matchup_data_available,
             "data_source": data_source,
         }
     except HTTPException:
