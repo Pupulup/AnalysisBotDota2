@@ -57,6 +57,10 @@ query GetMatch($matchId: Long!) {
 GUIDE_QUERY = """
 query HeroGuide($heroId: Short!, $matchLimit: Int!) {
   heroStats {
+    heroBase: winDay(take: 30, heroIds: [$heroId]) {
+      matchCount
+      winCount
+    }
     startingItems: itemStartingPurchase(heroId: $heroId) {
       matchCount
       winCount
