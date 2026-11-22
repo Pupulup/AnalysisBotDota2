@@ -164,7 +164,8 @@ export function OverviewSection({ match }: { match: MatchData }) {
 }
 
 function PlayerCard({ player, onSelect }: { player: MatchPlayer; onSelect: (p: MatchPlayer) => void }) {
-  return <button className="analytics-player-row" onClick={() => onSelect(player)}>
+  const language = useLanguage();
+  return <Localize language={language}><button className="analytics-player-row" onClick={() => onSelect(player)}>
     <div className="analytics-player-identity">
       {player.hero_image ? <img src={player.hero_image} alt={player.hero_name || "Hero"} /> : <div className="analytics-hero-fallback">?</div>}
       <div><strong>{playerName(player)}</strong><span>{player.hero_name || "Unknown hero"} · LVL {player.level}</span></div>
@@ -174,12 +175,13 @@ function PlayerCard({ player, onSelect }: { player: MatchPlayer; onSelect: (p: M
     <div className="analytics-player-cell"><strong>{number(player.net_worth)}</strong><span>NET WORTH</span></div>
     <div className="analytics-player-cell"><strong>{kda(player).toFixed(2)}</strong><span>KDA</span></div>
     <span className="analytics-open">›</span>
-  </button>;
+  </button></Localize>;
 }
 
 export function PlayersSection({ match, onSelect }: {
   match: MatchData; onSelect: (p: MatchPlayer) => void;
 }) {
+  const language = useLanguage();
   const radiantPlayers = match.players.filter(radiant);
   const direPlayers = match.players.filter(p => !radiant(p));
   const renderTeam = (teamPlayers: MatchPlayer[], team: "radiant" | "dire") =>
@@ -189,16 +191,16 @@ export function PlayersSection({ match, onSelect }: {
       </div>
     </Panel>;
 
-  return <div className="analytics-page">
+  return <Localize language={language}><div className="analytics-page">
     <div className="analytics-section-note">Select a player to open their detailed performance card.</div>
     {renderTeam(radiantPlayers, "radiant")}
     {renderTeam(direPlayers, "dire")}
-  </div>;
+  </div></Localize>;
 }
 
-function timelineOption(match: MatchData, key: "radiant_gold_adv" | "radiant_xp_adv") {
+function timelineOption(match: MatchData, key: "radiant_gold_adv" | "radiant_xp_adv", language: "en" | "ru") {
   const values = match[key] || [];
-  const label = key === "radiant_gold_adv" ? "Gold advantage" : "Experience advantage";
+  const label = language === "ru" ? (key === "radiant_gold_adv" ? "Преимущество по золоту" : "Преимущество по опыту") : (key === "radiant_gold_adv" ? "Gold advantage" : "Experience advantage");
   return {
     backgroundColor: "transparent",
     tooltip: { trigger: "axis", backgroundColor: "#151e2c", borderColor: "#34445d", textStyle: { color: "#edf1fa" } },
@@ -217,6 +219,7 @@ function eventLabel(event: Record<string, any>) {
 }
 
 export function TimelineSection({ match }: { match: MatchData }) {
+  const language = useLanguage();
   const gold = match.radiant_gold_adv || [];
   const xp = match.radiant_xp_adv || [];
   const events = [...(match.objectives || [])].sort((a, b) => (a.time || 0) - (b.time || 0));
@@ -225,10 +228,10 @@ export function TimelineSection({ match }: { match: MatchData }) {
   return <div className="analytics-page">
     {hasTimeline ? <>
       {gold.length > 0 && <Panel title="Gold advantage" subtitle="RADIANT POSITIVE · DIRE NEGATIVE">
-        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_gold_adv")} style={{ height: 300, width: "100%" }} /></div>
+        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_gold_adv", language)} style={{ height: 300, width: "100%" }} /></div>
       </Panel>}
       {xp.length > 0 && <Panel title="Experience advantage" subtitle="RADIANT POSITIVE · DIRE NEGATIVE">
-        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_xp_adv")} style={{ height: 300, width: "100%" }} /></div>
+        <div className="analytics-chart"><ReactECharts option={timelineOption(match, "radiant_xp_adv", language)} style={{ height: 300, width: "100%" }} /></div>
       </Panel>}
     </> : <Panel title="Timeline unavailable" subtitle="OPEN DOTA HAS NOT PROVIDED ADVANTAGE SERIES">
       <div className="analytics-empty">This match does not contain parsed gold or experience timeline data. The match overview and player statistics are still available.</div>
